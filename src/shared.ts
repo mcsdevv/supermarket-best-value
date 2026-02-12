@@ -13,6 +13,7 @@ export const NORMALIZATION_MAP: Record<string, NormalizationEntry> = {
   // Weight → per kg
   g: { target: "kg", multiplier: 1000 },
   "100g": { target: "kg", multiplier: 10 },
+  kilo: { target: "kg", multiplier: 1 },
   kg: { target: "kg", multiplier: 1 },
 
   // Volume → per litre
