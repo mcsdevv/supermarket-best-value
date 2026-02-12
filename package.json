@@ -9,9 +9,10 @@
     "test": "npm run build && node --test",
     "test:tesco": "npm run build && node --test content.test.js",
     "test:sainsburys": "npm run build && node --test sainsburys-content.test.js",
+    "test:morrisons": "npm run build && node --test morrisons-content.test.js",
     "package": "npm run build:prod && cd dist && zip -r ../supermarket-value-sort.zip .",
-    "lint": "oxlint src/ content.test.js sainsburys-content.test.js esbuild.config.mjs",
-    "lint:fix": "oxlint --fix src/ content.test.js sainsburys-content.test.js esbuild.config.mjs",
+    "lint": "oxlint src/ content.test.js sainsburys-content.test.js morrisons-content.test.js esbuild.config.mjs",
+    "lint:fix": "oxlint --fix src/ content.test.js sainsburys-content.test.js morrisons-content.test.js esbuild.config.mjs",
     "format": "oxfmt .",
     "format:check": "oxfmt --check",
     "check": "npm run typecheck && npm run lint && npm run format:check"
