@@ -170,9 +170,20 @@ import { normalizePrice, compareByUnitPrice } from "./shared";
 
     sortable.sort((a, b) => compareByUnitPrice(a.priceInfo, b.priceInfo));
 
-    // Reorder DOM: products first, then skeletons
-    sortable.forEach((item) => container.appendChild(item.element));
-    skeletons.forEach((sk) => container.appendChild(sk));
+    // Pause observation while reordering to avoid self-triggered sort loops.
+    if (productObserver) productObserver.disconnect();
+
+    try {
+      sortable.forEach((item) => container.appendChild(item.element));
+      skeletons.forEach((sk) => container.appendChild(sk));
+    } finally {
+      if (productObserver) {
+        const currentContainer = getProductContainer();
+        if (currentContainer) {
+          productObserver.observe(currentContainer, { childList: true });
+        }
+      }
+    }
 
     console.log(`${LOG_PREFIX} Client-side sorted ${sortable.length} products`);
   }
@@ -181,6 +192,7 @@ import { normalizePrice, compareByUnitPrice } from "./shared";
 
   let comboboxObserver: MutationObserver | null = null;
   let productObserver: MutationObserver | null = null;
+  let spaObserver: MutationObserver | null = null;
 
   function observeComboboxResets(): void {
     if (comboboxObserver) comboboxObserver.disconnect();
@@ -207,7 +219,6 @@ import { normalizePrice, compareByUnitPrice } from "./shared";
     comboboxObserver.observe(document.body, {
       childList: true,
       subtree: true,
-      characterData: true,
     });
   }
 
@@ -275,7 +286,9 @@ import { normalizePrice, compareByUnitPrice } from "./shared";
     // Watch for SPA navigation
     let lastUrl = loc.href;
 
-    new MutationObserver(() => {
+    if (spaObserver) spaObserver.disconnect();
+
+    spaObserver = new MutationObserver(() => {
       if (loc.href !== lastUrl) {
         lastUrl = loc.href;
         console.log(`${LOG_PREFIX} SPA navigation to ${loc.href}`);
@@ -296,7 +309,9 @@ import { normalizePrice, compareByUnitPrice } from "./shared";
           if (combobox) activateSort();
         })();
       }
-    }).observe(document.body, { childList: true, subtree: true });
+    });
+
+    spaObserver.observe(document.body, { childList: true, subtree: true });
   }
 
   // --- Test Mode ---
@@ -330,6 +345,10 @@ import { normalizePrice, compareByUnitPrice } from "./shared";
         if (productObserver) {
           productObserver.disconnect();
           productObserver = null;
+        }
+        if (spaObserver) {
+          spaObserver.disconnect();
+          spaObserver = null;
         }
       },
     };
