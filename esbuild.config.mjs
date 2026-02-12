@@ -4,17 +4,29 @@ import { cpSync, mkdirSync } from "node:fs";
 const isWatch = process.argv.includes("--watch");
 const isProd = process.argv.includes("--prod");
 
-const config = {
+const sharedOptions = {
   bundle: true,
-  define: isProd ? { "window.__TESCO_VALUE_SORT_TEST_MODE__": "false" } : {},
-  entryPoints: ["src/content.ts"],
   format: "iife",
   logLevel: "info",
   minify: false,
-  outfile: "dist/content.js",
   sourcemap: false,
   target: "chrome120",
 };
+
+const configs = [
+  {
+    ...sharedOptions,
+    define: isProd ? { "window.__TESCO_VALUE_SORT_TEST_MODE__": "false" } : {},
+    entryPoints: ["src/content.ts"],
+    outfile: "dist/content.js",
+  },
+  {
+    ...sharedOptions,
+    define: isProd ? { "window.__SAINSBURYS_VALUE_SORT_TEST_MODE__": "false" } : {},
+    entryPoints: ["src/sainsburys-content.ts"],
+    outfile: "dist/sainsburys-content.js",
+  },
+];
 
 function copyAssets() {
   mkdirSync("dist/icons", { recursive: true });
@@ -23,10 +35,14 @@ function copyAssets() {
 }
 
 if (isWatch) {
-  const ctx = await context(config);
+  for (const config of configs) {
+    const ctx = await context(config);
+    await ctx.watch();
+  }
   copyAssets();
-  await ctx.watch();
 } else {
-  await build(config);
+  for (const config of configs) {
+    await build(config);
+  }
   copyAssets();
 }

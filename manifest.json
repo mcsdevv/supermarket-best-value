@@ -1,12 +1,17 @@
 {
   "manifest_version": 3,
-  "name": "Tesco Value Sort",
-  "version": "1.0.0",
-  "description": "Adds a 'Value' sort option to Tesco Groceries that sorts products by unit price (lowest first).",
+  "name": "Supermarket Value Sort",
+  "version": "1.1.0",
+  "description": "Adds a 'Value' sort option to supermarket websites that sorts products by unit price (lowest first). Supports Tesco and Sainsbury's.",
   "content_scripts": [
     {
       "matches": ["https://www.tesco.com/groceries/*"],
       "js": ["content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.sainsburys.co.uk/gol-ui/groceries/*"],
+      "js": ["sainsburys-content.js"],
       "run_at": "document_idle"
     }
   ],

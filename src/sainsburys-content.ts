@@ -10,25 +10,21 @@ import {
 (function () {
   "use strict";
 
-  const LOG_PREFIX = "[Tesco Value Sort]" as const;
+  const LOG_PREFIX = "[Sainsburys Value Sort]" as const;
   let valueSortActive = false;
 
   // --- Selectors ---
-  const UNIT_PRICE_SELECTOR = '[class*="price__subtext"]';
-  const PRODUCT_LIST_SELECTORS = ['[data-auto="product-list"]', "#list-content", "ul.product-list"];
+  const UNIT_PRICE_SELECTOR = '[data-testid="pt-unit-price"]';
+  const PRODUCT_LIST_SELECTOR = "ul.ln-o-grid.ln-o-grid--matrix";
 
   // --- Extraction ---
 
   function extractUnitPrice(card: Element) {
     const el = card.querySelector(UNIT_PRICE_SELECTOR);
-    if (!el) {
-      return null;
-    }
+    if (!el) return null;
 
     const parsed = parseUnitPrice(el.textContent ?? "");
-    if (!parsed) {
-      return null;
-    }
+    if (!parsed) return null;
 
     return normalizePrice(parsed.price, parsed.unit, LOG_PREFIX);
   }
@@ -36,36 +32,29 @@ import {
   // --- DOM finders ---
 
   function findSortDropdown(): HTMLSelectElement | null {
-    // Strategy 1: data-auto or id containing "sort"
+    // Strategy 1: Sainsbury's Fable select component in filter toolbar
     let select = document.querySelector<HTMLSelectElement>(
-      'select[id*="sort" i], select[data-auto*="sort" i]',
+      "div.filter-toolbar--sorting-select select.ds-c-select__select"
     );
-    if (select) {
-      return select;
-    }
+    if (select) return select;
 
-    // Strategy 2: select near "Sort by" label text
-    const textNodes = document.querySelectorAll("label, span, div, p");
-    for (const node of textNodes) {
-      if (
-        node.childElementCount === 0 &&
-        node.textContent?.trim().toLowerCase().includes("sort by")
-      ) {
-        const parent = node.closest("div, form, fieldset, section");
-        if (parent) {
-          select = parent.querySelector<HTMLSelectElement>("select");
-          if (select) {
-            return select;
-          }
+    // Strategy 2: "Sort by" label association
+    const labels = document.querySelectorAll("label");
+    for (const label of labels) {
+      if (label.textContent?.trim().toLowerCase() === "sort by") {
+        const container = label.closest("div.ds-c-select") ?? label.parentElement;
+        if (container) {
+          select = container.querySelector<HTMLSelectElement>("select");
+          if (select) return select;
         }
       }
     }
 
-    // Strategy 3: select with sorting-related options
+    // Strategy 3: select with Sainsbury's sort option values
     const selects = document.querySelectorAll<HTMLSelectElement>("select");
     for (const sel of selects) {
-      const optTexts = [...sel.options].map((o) => o.textContent?.toLowerCase() ?? "");
-      if (optTexts.some((t) => t.includes("relevance") || t.includes("price"))) {
+      const values = Array.from(sel.options).map((o) => o.value);
+      if (values.includes("-relevance") || values.includes("price")) {
         return sel;
       }
     }
@@ -74,17 +63,11 @@ import {
   }
 
   function getProductList(): HTMLElement | null {
-    for (const selector of PRODUCT_LIST_SELECTORS) {
-      const el = document.querySelector<HTMLElement>(selector);
-      if (el) {
-        return el;
-      }
-    }
-    return null;
+    return document.querySelector<HTMLElement>(PRODUCT_LIST_SELECTOR);
   }
 
   function getProductCards(list: HTMLElement): HTMLLIElement[] {
-    return [...list.querySelectorAll<HTMLLIElement>(":scope > li")];
+    return Array.from(list.querySelectorAll<HTMLLIElement>(":scope > li"));
   }
 
   // --- Sorting ---
@@ -109,10 +92,11 @@ import {
 
     sortable.sort((a, b) => compareByUnitPrice(a.priceInfo, b.priceInfo));
 
-    // Reorder DOM — appendChild moves existing nodes (no cloning)
-    sortable.forEach((item) => list.append(item.element));
+    sortable.forEach((item) => list.appendChild(item.element));
 
-    console.log(`${LOG_PREFIX} Sorted ${sortable.length} products by unit price`);
+    console.log(
+      `${LOG_PREFIX} Sorted ${sortable.length} products by unit price`
+    );
   }
 
   // --- Observers ---
@@ -126,28 +110,20 @@ import {
     }
 
     const list = getProductList();
-    if (!list) {
-      return;
-    }
+    if (!list) return;
 
     let sortTimeout: ReturnType<typeof setTimeout> | null = null;
 
     productObserver = new MutationObserver((mutations) => {
       const hasNewProducts = mutations.some(
-        (m) => m.addedNodes.length > 0 && m.type === "childList",
+        (m) => m.addedNodes.length > 0 && m.type === "childList"
       );
-      if (!hasNewProducts) {
-        return;
-      }
+      if (!hasNewProducts) return;
 
       const select = findSortDropdown();
-      if (!select || select.value !== VALUE_OPTION_ID) {
-        return;
-      }
+      if (!select || select.value !== VALUE_OPTION_ID) return;
 
-      if (sortTimeout !== null) {
-        clearTimeout(sortTimeout);
-      }
+      if (sortTimeout !== null) clearTimeout(sortTimeout);
       sortTimeout = setTimeout(() => sortByUnitPrice(), 300);
     });
 
@@ -157,14 +133,12 @@ import {
   // --- Injection ---
 
   function injectValueOption(select: HTMLSelectElement): void {
-    if (select.querySelector(`option[value="${VALUE_OPTION_ID}"]`)) {
-      return;
-    }
+    if (select.querySelector(`option[value="${VALUE_OPTION_ID}"]`)) return;
 
     const option = document.createElement("option");
     option.value = VALUE_OPTION_ID;
     option.textContent = "Value (Unit Price)";
-    select.append(option);
+    select.appendChild(option);
 
     select.addEventListener(
       "change",
@@ -179,7 +153,7 @@ import {
           valueSortActive = false;
         }
       },
-      true,
+      true
     );
 
     console.log(`${LOG_PREFIX} Injected "Value (Unit Price)" sort option`);
@@ -191,7 +165,8 @@ import {
 
   // --- Attempt injection ---
 
-  const SORT_SELECT_SELECTOR = 'select[id*="sort" i], select[data-auto*="sort" i]';
+  const SORT_SELECT_SELECTOR =
+    "div.filter-toolbar--sorting-select select, select.ds-c-select__select";
 
   let stopSortWatchers: (() => void) | null = null;
   let stopProductListWatch: (() => void) | null = null;
@@ -224,45 +199,43 @@ import {
     const tryInject = (source: string): boolean => {
       const dropdown = findSortDropdown();
       if (dropdown) {
-        if (stopSortWatchers) {
-          stopSortWatchers();
-        }
+        if (stopSortWatchers) stopSortWatchers();
         console.log(`${LOG_PREFIX} Sort dropdown found via ${source}`);
         injectValueOption(dropdown);
         observeSelectRerender(dropdown);
         return true;
+      } else {
+        return false;
       }
-      return false;
     };
 
-    // Primary: sort-specific attributes
-    stopSpecificWatch = waitForElement(SORT_SELECT_SELECTOR, () => tryInject("sort selector"), 10_000, {
-      logPrefix: LOG_PREFIX,
-    });
+    stopSpecificWatch = waitForElement(
+      SORT_SELECT_SELECTOR,
+      () => tryInject("sort selector"),
+      10000,
+      { logPrefix: LOG_PREFIX }
+    );
 
-    // Fallback: any select (for pages where sort select lacks sort-specific attrs)
-    stopFallbackWatch = waitForElement("select", () => tryInject("select fallback"), 10_000, {
-      logPrefix: LOG_PREFIX,
-      warnOnTimeout: false,
-    });
+    stopFallbackWatch = waitForElement(
+      "select",
+      () => tryInject("select fallback"),
+      10000,
+      { warnOnTimeout: false, logPrefix: LOG_PREFIX }
+    );
   }
 
   // Re-inject if React re-renders the <select> and removes our option
   let selectObserver: MutationObserver | null = null;
 
   function observeSelectRerender(select: HTMLSelectElement): void {
-    if (selectObserver) {
-      selectObserver.disconnect();
-    }
+    if (selectObserver) selectObserver.disconnect();
 
     let observedSelect = select;
     let syncScheduled = false;
 
     const syncSelectOption = (): void => {
       const currentSelect = findSortDropdown();
-      if (!currentSelect) {
-        return;
-      }
+      if (!currentSelect) return;
 
       if (currentSelect !== observedSelect) {
         observedSelect = currentSelect;
@@ -285,9 +258,7 @@ import {
     };
 
     selectObserver = new MutationObserver(() => {
-      if (syncScheduled) {
-        return;
-      }
+      if (syncScheduled) return;
       syncScheduled = true;
       queueMicrotask(() => {
         syncScheduled = false;
@@ -304,13 +275,12 @@ import {
     const loc = document.location;
     console.log(`${LOG_PREFIX} Initializing on ${loc.href}`);
 
-    // Gate on product list to ensure page is sufficiently rendered before
-    // Looking for the sort dropdown. waitForElement checks immediately first,
-    // So pages where the product list is already in the DOM work without delay.
-    const productListSelector = PRODUCT_LIST_SELECTORS.join(", ");
-    stopProductListWatch = waitForElement(productListSelector, () => attemptInjection(), 10_000, {
-      logPrefix: LOG_PREFIX,
-    });
+    stopProductListWatch = waitForElement(
+      PRODUCT_LIST_SELECTOR,
+      () => attemptInjection(),
+      10000,
+      { logPrefix: LOG_PREFIX }
+    );
 
     let lastUrl = loc.href;
 
@@ -335,23 +305,30 @@ import {
           stopProductListWatch();
           stopProductListWatch = null;
         }
-        stopProductListWatch = waitForElement(productListSelector, () => attemptInjection(), 10_000, {
-          logPrefix: LOG_PREFIX,
-        });
+        stopProductListWatch = waitForElement(
+          PRODUCT_LIST_SELECTOR,
+          () => attemptInjection(),
+          10000,
+          { logPrefix: LOG_PREFIX }
+        );
       }
     }).observe(document.body, { childList: true, subtree: true });
   }
 
-  if (globalThis.__TESCO_VALUE_SORT_TEST_MODE__) {
-    globalThis.__TESCO_VALUE_SORT_TEST_HOOKS__ = {
+  if (globalThis.__SAINSBURYS_VALUE_SORT_TEST_MODE__) {
+    globalThis.__SAINSBURYS_VALUE_SORT_TEST_HOOKS__ = {
       VALUE_OPTION_ID,
-      attemptInjection,
       findSortDropdown,
-      getProductList,
-      init,
       injectValueOption,
-      observeProductList,
       observeSelectRerender,
+      waitForElement,
+      attemptInjection,
+      init,
+      get valueSortActive() { return valueSortActive; },
+      set valueSortActive(v: boolean) { valueSortActive = v; },
+      sortByUnitPrice,
+      observeProductList,
+      getProductList,
       resetObservers: () => {
         valueSortActive = false;
         if (productObserver) {
@@ -371,14 +348,6 @@ import {
           stopProductListWatch = null;
         }
       },
-      sortByUnitPrice,
-      get valueSortActive() {
-        return valueSortActive;
-      },
-      set valueSortActive(v: boolean) {
-        valueSortActive = v;
-      },
-      waitForElement,
     };
     return;
   }

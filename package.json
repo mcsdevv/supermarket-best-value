@@ -1,15 +1,17 @@
 {
-  "name": "tesco-value-sort",
+  "name": "supermarket-value-sort",
   "private": true,
   "scripts": {
     "build": "node esbuild.config.mjs",
     "build:prod": "node esbuild.config.mjs --prod",
     "build:watch": "node esbuild.config.mjs --watch",
     "typecheck": "tsc --noEmit",
-    "test": "npm run build && node --test content.test.js",
-    "package": "npm run build:prod && cd dist && zip -r ../tesco-value-sort.zip .",
-    "lint": "oxlint src/ content.test.js esbuild.config.mjs",
-    "lint:fix": "oxlint --fix src/ content.test.js esbuild.config.mjs",
+    "test": "npm run build && node --test",
+    "test:tesco": "npm run build && node --test content.test.js",
+    "test:sainsburys": "npm run build && node --test sainsburys-content.test.js",
+    "package": "npm run build:prod && cd dist && zip -r ../supermarket-value-sort.zip .",
+    "lint": "oxlint src/ content.test.js sainsburys-content.test.js esbuild.config.mjs",
+    "lint:fix": "oxlint --fix src/ content.test.js sainsburys-content.test.js esbuild.config.mjs",
     "format": "oxfmt .",
     "format:check": "oxfmt --check",
     "check": "npm run typecheck && npm run lint && npm run format:check"

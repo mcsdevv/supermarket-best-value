@@ -23,8 +23,8 @@ export interface SortableProduct {
   priceInfo: NormalizedPrice | null;
 }
 
-/** Test hook types */
-interface TescoValueSortTestHooks {
+/** Common test hook shape shared by all site scripts */
+interface SiteTestHooks {
   VALUE_OPTION_ID: string;
   findSortDropdown: () => HTMLSelectElement | null;
   injectValueOption: (select: HTMLSelectElement) => void;
@@ -33,7 +33,7 @@ interface TescoValueSortTestHooks {
     selector: string,
     callback: (el: Element) => boolean | void,
     maxWait?: number,
-    options?: { warnOnTimeout?: boolean },
+    options?: { warnOnTimeout?: boolean; logPrefix?: string },
   ) => () => void;
   attemptInjection: () => void;
   init: () => void;
@@ -49,5 +49,9 @@ declare global {
   // eslint-disable-next-line no-var
   var __TESCO_VALUE_SORT_TEST_MODE__: boolean | undefined;
   // eslint-disable-next-line no-var
-  var __TESCO_VALUE_SORT_TEST_HOOKS__: TescoValueSortTestHooks | undefined;
+  var __TESCO_VALUE_SORT_TEST_HOOKS__: SiteTestHooks | undefined;
+  // eslint-disable-next-line no-var
+  var __SAINSBURYS_VALUE_SORT_TEST_MODE__: boolean | undefined;
+  // eslint-disable-next-line no-var
+  var __SAINSBURYS_VALUE_SORT_TEST_HOOKS__: SiteTestHooks | undefined;
 }
