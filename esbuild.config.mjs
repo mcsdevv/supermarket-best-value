@@ -5,17 +5,15 @@ const isWatch = process.argv.includes("--watch");
 const isProd = process.argv.includes("--prod");
 
 const config = {
-  entryPoints: ["src/content.ts"],
   bundle: true,
-  outfile: "dist/content.js",
+  define: isProd ? { "window.__TESCO_VALUE_SORT_TEST_MODE__": "false" } : {},
+  entryPoints: ["src/content.ts"],
   format: "iife",
-  target: "chrome120",
-  minify: false,
-  sourcemap: false,
-  define: isProd
-    ? { "window.__TESCO_VALUE_SORT_TEST_MODE__": "false" }
-    : {},
   logLevel: "info",
+  minify: false,
+  outfile: "dist/content.js",
+  sourcemap: false,
+  target: "chrome120",
 };
 
 function copyAssets() {

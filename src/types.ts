@@ -23,28 +23,31 @@ export interface SortableProduct {
   priceInfo: NormalizedPrice | null;
 }
 
-/** Augment Window for test hooks */
+/** Test hook types */
+interface TescoValueSortTestHooks {
+  VALUE_OPTION_ID: string;
+  findSortDropdown: () => HTMLSelectElement | null;
+  injectValueOption: (select: HTMLSelectElement) => void;
+  observeSelectRerender: (select: HTMLSelectElement) => void;
+  waitForElement: (
+    selector: string,
+    callback: (el: Element) => boolean | void,
+    maxWait?: number,
+    options?: { warnOnTimeout?: boolean },
+  ) => () => void;
+  attemptInjection: () => void;
+  init: () => void;
+  valueSortActive: boolean;
+  sortByUnitPrice: () => void;
+  observeProductList: () => void;
+  getProductList: () => HTMLElement | null;
+  resetObservers: () => void;
+}
+
+/** Augment globalThis for test hooks */
 declare global {
-  interface Window {
-    __TESCO_VALUE_SORT_TEST_MODE__?: boolean;
-    __TESCO_VALUE_SORT_TEST_HOOKS__?: {
-      VALUE_OPTION_ID: string;
-      findSortDropdown: () => HTMLSelectElement | null;
-      injectValueOption: (select: HTMLSelectElement) => void;
-      observeSelectRerender: (select: HTMLSelectElement) => void;
-      waitForElement: (
-        selector: string,
-        callback: (el: Element) => boolean | void,
-        maxWait?: number,
-        options?: { warnOnTimeout?: boolean }
-      ) => () => void;
-      attemptInjection: () => void;
-      init: () => void;
-      valueSortActive: boolean;
-      sortByUnitPrice: () => void;
-      observeProductList: () => void;
-      getProductList: () => HTMLElement | null;
-      resetObservers: () => void;
-    };
-  }
+  // eslint-disable-next-line no-var
+  var __TESCO_VALUE_SORT_TEST_MODE__: boolean | undefined;
+  // eslint-disable-next-line no-var
+  var __TESCO_VALUE_SORT_TEST_HOOKS__: TescoValueSortTestHooks | undefined;
 }

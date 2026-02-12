@@ -1,4 +1,4 @@
-import type { ParsedPrice, NormalizedPrice, NormalizationEntry, SortableProduct } from "./types";
+import type { NormalizationEntry, NormalizedPrice, ParsedPrice, SortableProduct } from "./types";
 
 (function () {
   "use strict";
@@ -9,11 +9,7 @@ import type { ParsedPrice, NormalizedPrice, NormalizationEntry, SortableProduct 
 
   // --- Selectors ---
   const UNIT_PRICE_SELECTOR = '[class*="price__subtext"]';
-  const PRODUCT_LIST_SELECTORS = [
-    '[data-auto="product-list"]',
-    "#list-content",
-    "ul.product-list",
-  ];
+  const PRODUCT_LIST_SELECTORS = ['[data-auto="product-list"]', "#list-content", "ul.product-list"];
 
   // --- Unit price regex ---
   // Matches: "£4.34/kg", "89p/100ml", "£1.20/100g DR.WT", "£0.75/each"
@@ -23,35 +19,35 @@ import type { ParsedPrice, NormalizedPrice, NormalizationEntry, SortableProduct 
   // Converts all units to a base unit for fair comparison
   const NORMALIZATION_MAP: Record<string, NormalizationEntry> = {
     // Weight → per kg
-    g: { target: "kg", multiplier: 1000 },
-    "100g": { target: "kg", multiplier: 10 },
-    kg: { target: "kg", multiplier: 1 },
+    g: { multiplier: 1000, target: "kg" },
+    "100g": { multiplier: 10, target: "kg" },
+    kg: { multiplier: 1, target: "kg" },
 
     // Volume → per litre
-    ml: { target: "litre", multiplier: 1000 },
-    "10ml": { target: "litre", multiplier: 100 },
-    "100ml": { target: "litre", multiplier: 10 },
-    cl: { target: "litre", multiplier: 10 },
-    "75cl": { target: "litre", multiplier: 1.33333 },
-    l: { target: "litre", multiplier: 1 },
-    litre: { target: "litre", multiplier: 1 },
-    ltr: { target: "litre", multiplier: 1 },
+    ml: { multiplier: 1000, target: "litre" },
+    "10ml": { multiplier: 100, target: "litre" },
+    "100ml": { multiplier: 10, target: "litre" },
+    cl: { multiplier: 10, target: "litre" },
+    "75cl": { multiplier: 1.333_33, target: "litre" },
+    l: { multiplier: 1, target: "litre" },
+    litre: { multiplier: 1, target: "litre" },
+    ltr: { multiplier: 1, target: "litre" },
 
     // Count-based
-    each: { target: "each", multiplier: 1 },
-    ea: { target: "each", multiplier: 1 },
+    each: { multiplier: 1, target: "each" },
+    ea: { multiplier: 1, target: "each" },
 
     // Sheets
-    sht: { target: "sht", multiplier: 1 },
-    "100sht": { target: "sht", multiplier: 0.01 },
+    sht: { multiplier: 1, target: "sht" },
+    "100sht": { multiplier: 0.01, target: "sht" },
 
     // Wash/dose
-    wash: { target: "wash", multiplier: 1 },
-    wsh: { target: "wash", multiplier: 1 },
+    wash: { multiplier: 1, target: "wash" },
+    wsh: { multiplier: 1, target: "wash" },
 
     // Metre
-    m: { target: "m", multiplier: 1 },
-    mtr: { target: "m", multiplier: 1 },
+    m: { multiplier: 1, target: "m" },
+    mtr: { multiplier: 1, target: "m" },
   };
 
   // Unit group ordering for cross-unit sorting
@@ -60,16 +56,18 @@ import type { ParsedPrice, NormalizedPrice, NormalizationEntry, SortableProduct 
   // --- Parsing ---
 
   function parseUnitPrice(text: string): ParsedPrice | null {
-    const cleaned = text.trim().replace(/\s*DR\.?WT\.?\s*/gi, "");
+    const cleaned = text.trim().replaceAll(/\s*DR\.?WT\.?\s*/gi, "");
     const match = cleaned.match(UNIT_PRICE_REGEX);
-    if (!match) return null;
+    if (!match) {
+      return null;
+    }
 
     let price = parseFloat(match[1]);
     const unit = match[2].trim().toLowerCase();
 
     // Handle pence: "89p/100ml" — no £ sign and original text has 'p' before '/'
     if (!cleaned.startsWith("£") && /^\d+(\.\d+)?p\s*\//i.test(cleaned)) {
-      price = price / 100;
+      price /= 100;
     }
 
     return { price, unit };
@@ -79,21 +77,25 @@ import type { ParsedPrice, NormalizedPrice, NormalizationEntry, SortableProduct 
     const norm = NORMALIZATION_MAP[unit];
     if (!norm) {
       console.warn(`${LOG_PREFIX} Unknown unit: "${unit}"`);
-      return { price, unit, comparable: false };
+      return { comparable: false, price, unit };
     }
     return {
+      comparable: true,
       price: price * norm.multiplier,
       unit: norm.target,
-      comparable: true,
     };
   }
 
   function extractUnitPrice(card: Element): NormalizedPrice | null {
     const el = card.querySelector(UNIT_PRICE_SELECTOR);
-    if (!el) return null;
+    if (!el) {
+      return null;
+    }
 
     const parsed = parseUnitPrice(el.textContent ?? "");
-    if (!parsed) return null;
+    if (!parsed) {
+      return null;
+    }
 
     return normalizePrice(parsed.price, parsed.unit);
   }
@@ -103,9 +105,11 @@ import type { ParsedPrice, NormalizedPrice, NormalizationEntry, SortableProduct 
   function findSortDropdown(): HTMLSelectElement | null {
     // Strategy 1: data-auto or id containing "sort"
     let select = document.querySelector<HTMLSelectElement>(
-      'select[id*="sort" i], select[data-auto*="sort" i]'
+      'select[id*="sort" i], select[data-auto*="sort" i]',
     );
-    if (select) return select;
+    if (select) {
+      return select;
+    }
 
     // Strategy 2: select near "Sort by" label text
     const textNodes = document.querySelectorAll("label, span, div, p");
@@ -117,7 +121,9 @@ import type { ParsedPrice, NormalizedPrice, NormalizationEntry, SortableProduct 
         const parent = node.closest("div, form, fieldset, section");
         if (parent) {
           select = parent.querySelector<HTMLSelectElement>("select");
-          if (select) return select;
+          if (select) {
+            return select;
+          }
         }
       }
     }
@@ -125,9 +131,7 @@ import type { ParsedPrice, NormalizedPrice, NormalizationEntry, SortableProduct 
     // Strategy 3: select with sorting-related options
     const selects = document.querySelectorAll<HTMLSelectElement>("select");
     for (const sel of selects) {
-      const optTexts = Array.from(sel.options).map((o) =>
-        o.textContent?.toLowerCase() ?? ""
-      );
+      const optTexts = [...sel.options].map((o) => o.textContent?.toLowerCase() ?? "");
       if (optTexts.some((t) => t.includes("relevance") || t.includes("price"))) {
         return sel;
       }
@@ -139,13 +143,15 @@ import type { ParsedPrice, NormalizedPrice, NormalizationEntry, SortableProduct 
   function getProductList(): HTMLElement | null {
     for (const selector of PRODUCT_LIST_SELECTORS) {
       const el = document.querySelector<HTMLElement>(selector);
-      if (el) return el;
+      if (el) {
+        return el;
+      }
     }
     return null;
   }
 
   function getProductCards(list: HTMLElement): HTMLLIElement[] {
-    return Array.from(list.querySelectorAll<HTMLLIElement>(":scope > li"));
+    return [...list.querySelectorAll<HTMLLIElement>(":scope > li")];
   }
 
   // --- Sorting ---
@@ -173,9 +179,15 @@ import type { ParsedPrice, NormalizedPrice, NormalizationEntry, SortableProduct 
       const bInfo = b.priceInfo;
 
       // No price → bottom
-      if (!aInfo && !bInfo) return 0;
-      if (!aInfo) return 1;
-      if (!bInfo) return -1;
+      if (!aInfo && !bInfo) {
+        return 0;
+      }
+      if (!aInfo) {
+        return 1;
+      }
+      if (!bInfo) {
+        return -1;
+      }
 
       // Same unit → compare price directly
       if (aInfo.unit === bInfo.unit) {
@@ -188,16 +200,16 @@ import type { ParsedPrice, NormalizedPrice, NormalizationEntry, SortableProduct 
       const aIdx = aOrder === -1 ? 999 : aOrder;
       const bIdx = bOrder === -1 ? 999 : bOrder;
 
-      if (aIdx !== bIdx) return aIdx - bIdx;
+      if (aIdx !== bIdx) {
+        return aIdx - bIdx;
+      }
       return aInfo.price - bInfo.price;
     });
 
     // Reorder DOM — appendChild moves existing nodes (no cloning)
-    sortable.forEach((item) => list.appendChild(item.element));
+    sortable.forEach((item) => list.append(item.element));
 
-    console.log(
-      `${LOG_PREFIX} Sorted ${sortable.length} products by unit price`
-    );
+    console.log(`${LOG_PREFIX} Sorted ${sortable.length} products by unit price`);
   }
 
   // --- Observers ---
@@ -212,21 +224,29 @@ import type { ParsedPrice, NormalizedPrice, NormalizationEntry, SortableProduct 
     }
 
     const list = getProductList();
-    if (!list) return;
+    if (!list) {
+      return;
+    }
 
     let sortTimeout: ReturnType<typeof setTimeout> | null = null;
 
     productObserver = new MutationObserver((mutations) => {
       const hasNewProducts = mutations.some(
-        (m) => m.addedNodes.length > 0 && m.type === "childList"
+        (m) => m.addedNodes.length > 0 && m.type === "childList",
       );
-      if (!hasNewProducts) return;
+      if (!hasNewProducts) {
+        return;
+      }
 
       // Only re-sort if "Value" is still selected
       const select = findSortDropdown();
-      if (!select || select.value !== VALUE_OPTION_ID) return;
+      if (!select || select.value !== VALUE_OPTION_ID) {
+        return;
+      }
 
-      if (sortTimeout !== null) clearTimeout(sortTimeout);
+      if (sortTimeout !== null) {
+        clearTimeout(sortTimeout);
+      }
       sortTimeout = setTimeout(() => sortByUnitPrice(), 300);
     });
 
@@ -236,12 +256,14 @@ import type { ParsedPrice, NormalizedPrice, NormalizationEntry, SortableProduct 
   // --- Injection ---
 
   function injectValueOption(select: HTMLSelectElement): void {
-    if (select.querySelector(`option[value="${VALUE_OPTION_ID}"]`)) return;
+    if (select.querySelector(`option[value="${VALUE_OPTION_ID}"]`)) {
+      return;
+    }
 
     const option = document.createElement("option");
     option.value = VALUE_OPTION_ID;
     option.textContent = "Value (Unit Price)";
-    select.appendChild(option);
+    select.append(option);
 
     // Intercept at capture phase to fire before Tesco's React handler
     select.addEventListener(
@@ -257,7 +279,7 @@ import type { ParsedPrice, NormalizedPrice, NormalizationEntry, SortableProduct 
           valueSortActive = false;
         }
       },
-      true
+      true,
     );
 
     console.log(`${LOG_PREFIX} Injected "Value (Unit Price)" sort option`);
@@ -273,22 +295,30 @@ import type { ParsedPrice, NormalizedPrice, NormalizationEntry, SortableProduct 
   function waitForElement(
     selector: string,
     callback: (el: Element) => boolean | void,
-    maxWait = 10000,
-    { warnOnTimeout = true }: { warnOnTimeout?: boolean } = {}
+    maxWait = 10_000,
+    { warnOnTimeout = true }: { warnOnTimeout?: boolean } = {},
   ): () => void {
     let done = false;
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
     const cleanup = (observer?: MutationObserver): void => {
-      if (done) return;
+      if (done) {
+        return;
+      }
       done = true;
-      if (observer) observer.disconnect();
-      if (timeoutId !== null) clearTimeout(timeoutId);
+      if (observer) {
+        observer.disconnect();
+      }
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+      }
     };
 
     const runCallbackIfFound = (): boolean => {
       const found = document.querySelector(selector);
-      if (!found) return false;
+      if (!found) {
+        return false;
+      }
       // Returning false keeps the observer active.
       return callback(found) !== false;
     };
@@ -299,26 +329,29 @@ import type { ParsedPrice, NormalizedPrice, NormalizationEntry, SortableProduct 
     }
 
     const observer = new MutationObserver(() => {
-      if (done) return;
-      if (runCallbackIfFound()) cleanup(observer);
+      if (done) {
+        return;
+      }
+      if (runCallbackIfFound()) {
+        cleanup(observer);
+      }
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
     timeoutId = setTimeout(() => {
-      if (done) return;
+      if (done) {
+        return;
+      }
       cleanup(observer);
       if (warnOnTimeout) {
-        console.warn(
-          `${LOG_PREFIX} Timed out waiting for "${selector}" after ${maxWait}ms`
-        );
+        console.warn(`${LOG_PREFIX} Timed out waiting for "${selector}" after ${maxWait}ms`);
       }
     }, maxWait);
 
     return () => cleanup(observer);
   }
 
-  const SORT_SELECT_SELECTOR =
-    'select[id*="sort" i], select[data-auto*="sort" i]';
+  const SORT_SELECT_SELECTOR = 'select[id*="sort" i], select[data-auto*="sort" i]';
 
   let stopSortWatchers: (() => void) | null = null;
   let stopProductListWatch: (() => void) | null = null;
@@ -351,43 +384,42 @@ import type { ParsedPrice, NormalizedPrice, NormalizationEntry, SortableProduct 
     const tryInject = (source: string): boolean => {
       const dropdown = findSortDropdown();
       if (dropdown) {
-        if (stopSortWatchers) stopSortWatchers();
+        if (stopSortWatchers) {
+          stopSortWatchers();
+        }
         console.log(`${LOG_PREFIX} Sort dropdown found via ${source}`);
         injectValueOption(dropdown);
         observeSelectRerender(dropdown);
         return true;
-      } else {
-        return false;
       }
+      return false;
     };
 
     // Primary: sort-specific attributes
-    stopSpecificWatch = waitForElement(
-      SORT_SELECT_SELECTOR,
-      () => tryInject("sort selector")
-    );
+    stopSpecificWatch = waitForElement(SORT_SELECT_SELECTOR, () => tryInject("sort selector"));
 
     // Fallback: any select (for pages where sort select lacks sort-specific attrs)
-    stopFallbackWatch = waitForElement(
-      "select",
-      () => tryInject("select fallback"),
-      10000,
-      { warnOnTimeout: false }
-    );
+    stopFallbackWatch = waitForElement("select", () => tryInject("select fallback"), 10_000, {
+      warnOnTimeout: false,
+    });
   }
 
   // Re-inject if React re-renders the <select> and removes our option
   let selectObserver: MutationObserver | null = null;
 
   function observeSelectRerender(select: HTMLSelectElement): void {
-    if (selectObserver) selectObserver.disconnect();
+    if (selectObserver) {
+      selectObserver.disconnect();
+    }
 
     let observedSelect = select;
     let syncScheduled = false;
 
     const syncSelectOption = (): void => {
       const currentSelect = findSortDropdown();
-      if (!currentSelect) return;
+      if (!currentSelect) {
+        return;
+      }
 
       if (currentSelect !== observedSelect) {
         observedSelect = currentSelect;
@@ -410,7 +442,9 @@ import type { ParsedPrice, NormalizedPrice, NormalizationEntry, SortableProduct 
     };
 
     selectObserver = new MutationObserver(() => {
-      if (syncScheduled) return;
+      if (syncScheduled) {
+        return;
+      }
       syncScheduled = true;
       queueMicrotask(() => {
         syncScheduled = false;
@@ -428,12 +462,10 @@ import type { ParsedPrice, NormalizedPrice, NormalizationEntry, SortableProduct 
     console.log(`${LOG_PREFIX} Initializing on ${loc.href}`);
 
     // Gate on product list to ensure page is sufficiently rendered before
-    // looking for the sort dropdown. waitForElement checks immediately first,
-    // so pages where the product list is already in the DOM work without delay.
+    // Looking for the sort dropdown. waitForElement checks immediately first,
+    // So pages where the product list is already in the DOM work without delay.
     const productListSelector = PRODUCT_LIST_SELECTORS.join(", ");
-    stopProductListWatch = waitForElement(productListSelector, () =>
-      attemptInjection()
-    );
+    stopProductListWatch = waitForElement(productListSelector, () => attemptInjection());
 
     // Watch for SPA navigation (URL changes without full reload)
     let lastUrl = loc.href;
@@ -460,27 +492,21 @@ import type { ParsedPrice, NormalizedPrice, NormalizationEntry, SortableProduct 
           stopProductListWatch();
           stopProductListWatch = null;
         }
-        stopProductListWatch = waitForElement(productListSelector, () =>
-          attemptInjection()
-        );
+        stopProductListWatch = waitForElement(productListSelector, () => attemptInjection());
       }
     }).observe(document.body, { childList: true, subtree: true });
   }
 
-  if (window.__TESCO_VALUE_SORT_TEST_MODE__) {
-    window.__TESCO_VALUE_SORT_TEST_HOOKS__ = {
+  if (globalThis.__TESCO_VALUE_SORT_TEST_MODE__) {
+    globalThis.__TESCO_VALUE_SORT_TEST_HOOKS__ = {
       VALUE_OPTION_ID,
-      findSortDropdown,
-      injectValueOption,
-      observeSelectRerender,
-      waitForElement,
       attemptInjection,
-      init,
-      get valueSortActive() { return valueSortActive; },
-      set valueSortActive(v: boolean) { valueSortActive = v; },
-      sortByUnitPrice,
-      observeProductList,
+      findSortDropdown,
       getProductList,
+      init,
+      injectValueOption,
+      observeProductList,
+      observeSelectRerender,
       resetObservers: () => {
         valueSortActive = false;
         if (productObserver) {
@@ -500,6 +526,14 @@ import type { ParsedPrice, NormalizedPrice, NormalizationEntry, SortableProduct 
           stopProductListWatch = null;
         }
       },
+      sortByUnitPrice,
+      get valueSortActive() {
+        return valueSortActive;
+      },
+      set valueSortActive(v: boolean) {
+        valueSortActive = v;
+      },
+      waitForElement,
     };
     return;
   }

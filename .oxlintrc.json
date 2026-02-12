@@ -1,0 +1,62 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "import", "promise", "oxc"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "pedantic": "warn",
+    "perf": "warn",
+    "style": "warn",
+    "restriction": "off"
+  },
+  "env": {
+    "browser": true,
+    "es2024": true
+  },
+  "globals": {
+    "chrome": "readonly"
+  },
+  "rules": {
+    "eqeqeq": "error",
+    "import/no-cycle": "error",
+    "import/no-self-import": "error",
+    "unicorn/no-array-for-each": "off",
+    "no-magic-numbers": "off",
+    "id-length": "off",
+    "no-ternary": "off",
+    "func-style": "off",
+    "max-statements": "off",
+    "max-lines": "off",
+    "unicorn/no-null": "off",
+    "require-await": "off",
+    "promise/avoid-new": "off",
+    "no-promise-executor-return": "off",
+    "import/no-named-export": "off",
+    "import/exports-last": "off",
+    "import/group-exports": "off",
+    "max-params": "off",
+    "func-names": "off",
+    "sort-keys": "off",
+    "unicorn/consistent-function-scoping": "off",
+    "promise/prefer-await-to-callbacks": "off"
+  },
+  "ignorePatterns": ["dist/", "node_modules/"],
+  "overrides": [
+    {
+      "files": ["*.test.js", "*.test.ts"],
+      "env": { "node": true },
+      "rules": {
+        "unicorn/prefer-module": "off",
+        "max-lines-per-function": "off",
+        "import/no-nodejs-modules": "off"
+      }
+    },
+    {
+      "files": ["*.config.mjs"],
+      "env": { "node": true },
+      "rules": {
+        "import/no-nodejs-modules": "off"
+      }
+    }
+  ]
+}
