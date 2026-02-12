@@ -236,9 +236,14 @@ import {
     };
 
     // Primary: sort-specific attributes
-    stopSpecificWatch = waitForElement(SORT_SELECT_SELECTOR, () => tryInject("sort selector"), 10_000, {
-      logPrefix: LOG_PREFIX,
-    });
+    stopSpecificWatch = waitForElement(
+      SORT_SELECT_SELECTOR,
+      () => tryInject("sort selector"),
+      10_000,
+      {
+        logPrefix: LOG_PREFIX,
+      },
+    );
 
     // Fallback: any select (for pages where sort select lacks sort-specific attrs)
     stopFallbackWatch = waitForElement("select", () => tryInject("select fallback"), 10_000, {
@@ -335,9 +340,14 @@ import {
           stopProductListWatch();
           stopProductListWatch = null;
         }
-        stopProductListWatch = waitForElement(productListSelector, () => attemptInjection(), 10_000, {
-          logPrefix: LOG_PREFIX,
-        });
+        stopProductListWatch = waitForElement(
+          productListSelector,
+          () => attemptInjection(),
+          10_000,
+          {
+            logPrefix: LOG_PREFIX,
+          },
+        );
       }
     }).observe(document.body, { childList: true, subtree: true });
   }

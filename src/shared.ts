@@ -78,7 +78,10 @@ export function normalizePrice(price: number, unit: string, logPrefix: string): 
 
 // --- Sorting comparator ---
 
-export function compareByUnitPrice(aInfo: NormalizedPrice | null, bInfo: NormalizedPrice | null): number {
+export function compareByUnitPrice(
+  aInfo: NormalizedPrice | null,
+  bInfo: NormalizedPrice | null,
+): number {
   if (!aInfo && !bInfo) return 0;
   if (!aInfo) return 1;
   if (!bInfo) return -1;
@@ -102,7 +105,10 @@ export function waitForElement(
   selector: string,
   callback: (el: Element) => boolean | void,
   maxWait = 10000,
-  { warnOnTimeout = true, logPrefix = "[Value Sort]" }: { warnOnTimeout?: boolean; logPrefix?: string } = {}
+  {
+    warnOnTimeout = true,
+    logPrefix = "[Value Sort]",
+  }: { warnOnTimeout?: boolean; logPrefix?: string } = {},
 ): () => void {
   let done = false;
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -135,9 +141,7 @@ export function waitForElement(
     if (done) return;
     cleanup(observer);
     if (warnOnTimeout) {
-      console.warn(
-        `${logPrefix} Timed out waiting for "${selector}" after ${maxWait}ms`
-      );
+      console.warn(`${logPrefix} Timed out waiting for "${selector}" after ${maxWait}ms`);
     }
   }, maxWait);
 

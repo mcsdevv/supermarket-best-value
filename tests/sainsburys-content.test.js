@@ -12,14 +12,11 @@ function delay(window, ms) {
 }
 
 function setupDom(bodyHtml = "") {
-  const dom = new JSDOM(
-    `<!doctype html><html><body>${bodyHtml}</body></html>`,
-    {
-      url: "https://www.sainsburys.co.uk/gol-ui/groceries/fruit-and-vegetables/fresh-fruit/apples/c:1034099",
-      runScripts: "outside-only",
-      pretendToBeVisual: true,
-    }
-  );
+  const dom = new JSDOM(`<!doctype html><html><body>${bodyHtml}</body></html>`, {
+    url: "https://www.sainsburys.co.uk/gol-ui/groceries/fruit-and-vegetables/fresh-fruit/apples/c:1034099",
+    runScripts: "outside-only",
+    pretendToBeVisual: true,
+  });
 
   const { window } = dom;
   const warnings = [];
@@ -42,32 +39,32 @@ function setupDom(bodyHtml = "") {
 function makeSortDropdown() {
   return (
     '<div class="ds-c-select filter-toolbar--sorting-select">' +
-      '<label class="ds-c-select--label ds-c-select--sr-only">Sort by</label>' +
-      '<select class="ds-c-select__select">' +
-        '<option value="-relevance">Relevance</option>' +
-        '<option value="price">Price - Low to High</option>' +
-        '<option value="-price">Price - High to Low</option>' +
-      '</select>' +
-    '</div>'
+    '<label class="ds-c-select--label ds-c-select--sr-only">Sort by</label>' +
+    '<select class="ds-c-select__select">' +
+    '<option value="-relevance">Relevance</option>' +
+    '<option value="price">Price - Low to High</option>' +
+    '<option value="-price">Price - High to Low</option>' +
+    "</select>" +
+    "</div>"
   );
 }
 
 function makeProduct(unitPriceText) {
   return (
     '<li class="pt-grid-item ln-o-grid__item">' +
-      '<div data-testid="pt-retail-price-and-unit">' +
-        '<span data-testid="pt-retail-price">£1.00</span>' +
-        `<span data-testid="pt-unit-price" class="pt__cost__unit-price-per-measure">${unitPriceText}</span>` +
-      '</div>' +
-    '</li>'
+    '<div data-testid="pt-retail-price-and-unit">' +
+    '<span data-testid="pt-retail-price">£1.00</span>' +
+    `<span data-testid="pt-unit-price" class="pt__cost__unit-price-per-measure">${unitPriceText}</span>` +
+    "</div>" +
+    "</li>"
   );
 }
 
 function makeProductList(prices) {
   return (
     '<ul class="ln-o-grid ln-o-grid--matrix ln-o-grid--equal-height">' +
-      prices.map(makeProduct).join("") +
-    '</ul>'
+    prices.map(makeProduct).join("") +
+    "</ul>"
   );
 }
 
@@ -75,7 +72,10 @@ function makeProductList(prices) {
 
 test("findSortDropdown finds Sainsbury's Fable select component", (t) => {
   const env = setupDom(makeSortDropdown());
-  t.after(() => { env.hooks.resetObservers(); env.dom.window.close(); });
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
 
   const select = env.hooks.findSortDropdown();
   assert.ok(select, "should find the sort dropdown");
@@ -86,14 +86,17 @@ test("findSortDropdown falls back to label-based search", (t) => {
   // Remove the specific class, keep the label
   const html =
     '<div class="some-wrapper">' +
-      '<label>Sort by</label>' +
-      '<select>' +
-        '<option value="-relevance">Relevance</option>' +
-        '<option value="price">Price - Low to High</option>' +
-      '</select>' +
-    '</div>';
+    "<label>Sort by</label>" +
+    "<select>" +
+    '<option value="-relevance">Relevance</option>' +
+    '<option value="price">Price - Low to High</option>' +
+    "</select>" +
+    "</div>";
   const env = setupDom(html);
-  t.after(() => { env.hooks.resetObservers(); env.dom.window.close(); });
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
 
   const select = env.hooks.findSortDropdown();
   assert.ok(select, "should find dropdown via label strategy");
@@ -102,14 +105,17 @@ test("findSortDropdown falls back to label-based search", (t) => {
 test("findSortDropdown falls back to option-value sniffing", (t) => {
   // No label, no specific class — just a select with Sainsbury's option values
   const html =
-    '<div>' +
-      '<select>' +
-        '<option value="-relevance">Relevance</option>' +
-        '<option value="price">Price - Low to High</option>' +
-      '</select>' +
-    '</div>';
+    "<div>" +
+    "<select>" +
+    '<option value="-relevance">Relevance</option>' +
+    '<option value="price">Price - Low to High</option>' +
+    "</select>" +
+    "</div>";
   const env = setupDom(html);
-  t.after(() => { env.hooks.resetObservers(); env.dom.window.close(); });
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
 
   const select = env.hooks.findSortDropdown();
   assert.ok(select, "should find dropdown via option value sniffing");
@@ -117,10 +123,12 @@ test("findSortDropdown falls back to option-value sniffing", (t) => {
 
 test("injectValueOption auto-selects Value sort and sorts products", (t) => {
   const env = setupDom(
-    makeSortDropdown() +
-    makeProductList(["£5.00 / kg", "£2.00 / kg", "£3.00 / kg"])
+    makeSortDropdown() + makeProductList(["£5.00 / kg", "£2.00 / kg", "£3.00 / kg"]),
   );
-  t.after(() => { env.hooks.resetObservers(); env.dom.window.close(); });
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
 
   const select = env.hooks.findSortDropdown();
   env.hooks.injectValueOption(select);
@@ -129,7 +137,7 @@ test("injectValueOption auto-selects Value sort and sorts products", (t) => {
 
   const items = env.document.querySelectorAll("ul.ln-o-grid > li");
   const prices = Array.from(items).map(
-    (li) => li.querySelector('[data-testid="pt-unit-price"]').textContent
+    (li) => li.querySelector('[data-testid="pt-unit-price"]').textContent,
   );
   assert.equal(prices[0], "£2.00 / kg");
   assert.equal(prices[1], "£3.00 / kg");
@@ -137,18 +145,18 @@ test("injectValueOption auto-selects Value sort and sorts products", (t) => {
 });
 
 test("injectValueOption sorts Sainsbury's pence format correctly", (t) => {
-  const env = setupDom(
-    makeSortDropdown() +
-    makeProductList(["63p / ea", "17p / ea", "30p / ea"])
-  );
-  t.after(() => { env.hooks.resetObservers(); env.dom.window.close(); });
+  const env = setupDom(makeSortDropdown() + makeProductList(["63p / ea", "17p / ea", "30p / ea"]));
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
 
   const select = env.hooks.findSortDropdown();
   env.hooks.injectValueOption(select);
 
   const items = env.document.querySelectorAll("ul.ln-o-grid > li");
   const prices = Array.from(items).map(
-    (li) => li.querySelector('[data-testid="pt-unit-price"]').textContent
+    (li) => li.querySelector('[data-testid="pt-unit-price"]').textContent,
   );
   assert.equal(prices[0], "17p / ea");
   assert.equal(prices[1], "30p / ea");
@@ -157,17 +165,19 @@ test("injectValueOption sorts Sainsbury's pence format correctly", (t) => {
 
 test("injectValueOption handles mixed unit types", (t) => {
   const env = setupDom(
-    makeSortDropdown() +
-    makeProductList(["30p / ea", "£2.50 / kg", "£1.00 / kg"])
+    makeSortDropdown() + makeProductList(["30p / ea", "£2.50 / kg", "£1.00 / kg"]),
   );
-  t.after(() => { env.hooks.resetObservers(); env.dom.window.close(); });
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
 
   const select = env.hooks.findSortDropdown();
   env.hooks.injectValueOption(select);
 
   const items = env.document.querySelectorAll("ul.ln-o-grid > li");
   const prices = Array.from(items).map(
-    (li) => li.querySelector('[data-testid="pt-unit-price"]').textContent
+    (li) => li.querySelector('[data-testid="pt-unit-price"]').textContent,
   );
   // kg group comes before each group
   assert.equal(prices[0], "£1.00 / kg");
@@ -176,11 +186,11 @@ test("injectValueOption handles mixed unit types", (t) => {
 });
 
 test("injectValueOption skips when option already exists", (t) => {
-  const env = setupDom(
-    makeSortDropdown() +
-    makeProductList(["£5.00 / kg", "£2.00 / kg"])
-  );
-  t.after(() => { env.hooks.resetObservers(); env.dom.window.close(); });
+  const env = setupDom(makeSortDropdown() + makeProductList(["£5.00 / kg", "£2.00 / kg"]));
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
 
   const select = env.hooks.findSortDropdown();
   env.hooks.injectValueOption(select);
@@ -195,11 +205,11 @@ test("injectValueOption skips when option already exists", (t) => {
 });
 
 test("selecting a different sort option clears valueSortActive", (t) => {
-  const env = setupDom(
-    makeSortDropdown() +
-    makeProductList(["£1.00 / kg"])
-  );
-  t.after(() => { env.hooks.resetObservers(); env.dom.window.close(); });
+  const env = setupDom(makeSortDropdown() + makeProductList(["£1.00 / kg"]));
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
 
   const select = env.hooks.findSortDropdown();
   env.hooks.injectValueOption(select);
@@ -216,11 +226,11 @@ test("selecting a different sort option clears valueSortActive", (t) => {
 });
 
 test("observeSelectRerender re-injects when sort select node is replaced", async (t) => {
-  const env = setupDom(
-    makeSortDropdown() +
-    makeProductList(["£1.00 / kg"])
-  );
-  t.after(() => { env.hooks.resetObservers(); env.dom.window.close(); });
+  const env = setupDom(makeSortDropdown() + makeProductList(["£1.00 / kg"]));
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
 
   const wrapper = env.document.querySelector(".filter-toolbar--sorting-select");
   const initialSelect = wrapper.querySelector("select");
@@ -240,16 +250,16 @@ test("observeSelectRerender re-injects when sort select node is replaced", async
 
   assert.ok(
     replacement.querySelector(`option[value="${env.hooks.VALUE_OPTION_ID}"]`),
-    "Value option should be re-injected into replacement select"
+    "Value option should be re-injected into replacement select",
   );
 });
 
 test("selecting Value (Unit Price) persists selection after React re-render", async (t) => {
-  const env = setupDom(
-    makeSortDropdown() +
-    makeProductList(["£1.00 / kg"])
-  );
-  t.after(() => { env.hooks.resetObservers(); env.dom.window.close(); });
+  const env = setupDom(makeSortDropdown() + makeProductList(["£1.00 / kg"]));
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
 
   const select = env.hooks.findSortDropdown();
 
@@ -272,21 +282,17 @@ test("selecting Value (Unit Price) persists selection after React re-render", as
 
   assert.ok(
     select.querySelector(`option[value="${env.hooks.VALUE_OPTION_ID}"]`),
-    "Value option should be re-injected"
+    "Value option should be re-injected",
   );
-  assert.equal(
-    select.value,
-    env.hooks.VALUE_OPTION_ID,
-    "select value should be restored"
-  );
+  assert.equal(select.value, env.hooks.VALUE_OPTION_ID, "select value should be restored");
 });
 
 test("observeSelectRerender re-selects after React resets value", async (t) => {
-  const env = setupDom(
-    makeSortDropdown() +
-    makeProductList(["£5.00 / kg", "£2.00 / kg"])
-  );
-  t.after(() => { env.hooks.resetObservers(); env.dom.window.close(); });
+  const env = setupDom(makeSortDropdown() + makeProductList(["£5.00 / kg", "£2.00 / kg"]));
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
 
   const select = env.hooks.findSortDropdown();
   env.hooks.injectValueOption(select);
@@ -305,7 +311,10 @@ test("observeSelectRerender re-selects after React resets value", async (t) => {
 
 test("attemptInjection falls back when sort select has no specific attributes", async (t) => {
   const env = setupDom(makeProductList(["£1.00 / kg"]));
-  t.after(() => { env.hooks.resetObservers(); env.dom.window.close(); });
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
 
   env.hooks.attemptInjection();
 
@@ -319,7 +328,7 @@ test("attemptInjection falls back when sort select has no specific attributes", 
   // Now add a select with Sainsbury's sort options but no specific class
   const container = env.document.createElement("div");
   container.innerHTML =
-    '<label>Sort by</label>' +
+    "<label>Sort by</label>" +
     '<select><option value="-relevance">Relevance</option><option value="price">Price - Low to High</option></select>';
   env.document.body.appendChild(container);
 
@@ -328,15 +337,16 @@ test("attemptInjection falls back when sort select has no specific attributes", 
   const sortSelect = container.querySelector("select");
   assert.ok(
     sortSelect.querySelector(`option[value="${env.hooks.VALUE_OPTION_ID}"]`),
-    "expected Value option to be injected"
+    "expected Value option to be injected",
   );
 });
 
 test("attemptInjection auto-selects after deferred dropdown discovery", async (t) => {
-  const env = setupDom(
-    makeProductList(["£4.00 / kg", "£1.00 / kg"])
-  );
-  t.after(() => { env.hooks.resetObservers(); env.dom.window.close(); });
+  const env = setupDom(makeProductList(["£4.00 / kg", "£1.00 / kg"]));
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
 
   env.hooks.attemptInjection();
 
@@ -363,7 +373,7 @@ test("attemptInjection auto-selects after deferred dropdown discovery", async (t
 
   const items = env.document.querySelectorAll("ul.ln-o-grid > li");
   const prices = Array.from(items).map(
-    (li) => li.querySelector('[data-testid="pt-unit-price"]').textContent
+    (li) => li.querySelector('[data-testid="pt-unit-price"]').textContent,
   );
   assert.equal(prices[0], "£1.00 / kg");
   assert.equal(prices[1], "£4.00 / kg");
@@ -371,7 +381,10 @@ test("attemptInjection auto-selects after deferred dropdown discovery", async (t
 
 test("init gates injection on product list appearing", async (t) => {
   const env = setupDom();
-  t.after(() => { env.hooks.resetObservers(); env.dom.window.close(); });
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
 
   // Call init on an empty page
   env.hooks.init();
@@ -396,7 +409,7 @@ test("init gates injection on product list appearing", async (t) => {
   assert.equal(
     select.querySelector(`option[value="${env.hooks.VALUE_OPTION_ID}"]`),
     null,
-    "should not inject before product list appears"
+    "should not inject before product list appears",
   );
 
   // Now add the product list
@@ -406,8 +419,8 @@ test("init gates injection on product list appearing", async (t) => {
   li.className = "pt-grid-item";
   li.innerHTML =
     '<div data-testid="pt-retail-price-and-unit">' +
-      '<span data-testid="pt-unit-price">£1.00 / kg</span>' +
-    '</div>';
+    '<span data-testid="pt-unit-price">£1.00 / kg</span>' +
+    "</div>";
   productList.appendChild(li);
   env.document.body.appendChild(productList);
 
@@ -415,19 +428,22 @@ test("init gates injection on product list appearing", async (t) => {
 
   assert.ok(
     select.querySelector(`option[value="${env.hooks.VALUE_OPTION_ID}"]`),
-    "should inject after product list appears"
+    "should inject after product list appears",
   );
 });
 
 test("products without unit price are sorted to the bottom", (t) => {
   const productListHtml =
     '<ul class="ln-o-grid ln-o-grid--matrix ln-o-grid--equal-height">' +
-      '<li class="pt-grid-item"><div>No price info</div></li>' +
-      '<li class="pt-grid-item"><div data-testid="pt-retail-price-and-unit"><span data-testid="pt-unit-price">£3.00 / kg</span></div></li>' +
-      '<li class="pt-grid-item"><div data-testid="pt-retail-price-and-unit"><span data-testid="pt-unit-price">£1.00 / kg</span></div></li>' +
-    '</ul>';
+    '<li class="pt-grid-item"><div>No price info</div></li>' +
+    '<li class="pt-grid-item"><div data-testid="pt-retail-price-and-unit"><span data-testid="pt-unit-price">£3.00 / kg</span></div></li>' +
+    '<li class="pt-grid-item"><div data-testid="pt-retail-price-and-unit"><span data-testid="pt-unit-price">£1.00 / kg</span></div></li>' +
+    "</ul>";
   const env = setupDom(makeSortDropdown() + productListHtml);
-  t.after(() => { env.hooks.resetObservers(); env.dom.window.close(); });
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
 
   const select = env.hooks.findSortDropdown();
   env.hooks.injectValueOption(select);

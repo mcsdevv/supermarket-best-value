@@ -87,10 +87,7 @@ import type {
     // Strategy 2: role=combobox near "Sort by" text
     const textNodes = document.querySelectorAll("h2, label, span, div, p");
     for (const node of textNodes) {
-      if (
-        node.childElementCount === 0 &&
-        node.textContent?.trim().toLowerCase() === "sort by"
-      ) {
+      if (node.childElementCount === 0 && node.textContent?.trim().toLowerCase() === "sort by") {
         const parent = node.closest("div, form, fieldset, section");
         if (parent) {
           combobox = parent.querySelector<HTMLElement>('[role="combobox"]');
@@ -293,7 +290,7 @@ import type {
       if (!valueSortActive) return;
 
       const hasNewProducts = mutations.some(
-        (m) => m.addedNodes.length > 0 && m.type === "childList"
+        (m) => m.addedNodes.length > 0 && m.type === "childList",
       );
       if (!hasNewProducts) return;
 
@@ -383,8 +380,12 @@ import type {
       waitForSelector,
       activateSort,
       init,
-      get valueSortActive() { return valueSortActive; },
-      set valueSortActive(v: boolean) { valueSortActive = v; },
+      get valueSortActive() {
+        return valueSortActive;
+      },
+      set valueSortActive(v: boolean) {
+        valueSortActive = v;
+      },
       resetObservers: () => {
         valueSortActive = false;
         if (comboboxObserver) {

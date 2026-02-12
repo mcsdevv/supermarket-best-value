@@ -81,10 +81,7 @@
     var textNodes = document.querySelectorAll("h2, label, span, div, p");
     for (var i = 0; i < textNodes.length; i++) {
       var node = textNodes[i];
-      if (
-        node.childElementCount === 0 &&
-        node.textContent.trim().toLowerCase() === "sort by"
-      ) {
+      if (node.childElementCount === 0 && node.textContent.trim().toLowerCase() === "sort by") {
         var parent = node.closest("div, form, fieldset, section");
         if (parent) {
           combobox = parent.querySelector('[role="combobox"]');
@@ -240,9 +237,7 @@
       container.appendChild(sk);
     });
 
-    console.log(
-      LOG_PREFIX + " Client-side sorted " + sortable.length + " products"
-    );
+    console.log(LOG_PREFIX + " Client-side sorted " + sortable.length + " products");
   }
 
   // --- Observers ---

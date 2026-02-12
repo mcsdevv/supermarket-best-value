@@ -7,22 +7,24 @@ const { JSDOM } = require("jsdom");
 const SCRIPT_PATH = path.join(__dirname, "..", "morrisons-content.js");
 const SCRIPT_SOURCE = fs.readFileSync(SCRIPT_PATH, "utf8");
 
-function delay(window, ms) {
-  return new Promise((resolve) => window.setTimeout(resolve, ms));
-}
-
 // --- HTML Helpers ---
 
 function morrisonsProduct(price, unit, id) {
   if (!unit) unit = "kilo";
   if (!id) id = Math.random().toString(36).slice(2, 10);
   return (
-    '<div data-test="fop-wrapper:' + id + '">' +
-      '<div class="product-card-container">' +
-        '<div data-test="fop-body">' +
-          '<span data-test="fop-price-per-unit">(£' + price + " per " + unit + ")</span>" +
-        "</div>" +
-      "</div>" +
+    '<div data-test="fop-wrapper:' +
+    id +
+    '">' +
+    '<div class="product-card-container">' +
+    '<div data-test="fop-body">' +
+    '<span data-test="fop-price-per-unit">(£' +
+    price +
+    " per " +
+    unit +
+    ")</span>" +
+    "</div>" +
+    "</div>" +
     "</div>"
   );
 }
@@ -30,12 +32,14 @@ function morrisonsProduct(price, unit, id) {
 function morrisonsProductNoPrice(id) {
   if (!id) id = Math.random().toString(36).slice(2, 10);
   return (
-    '<div data-test="fop-wrapper:' + id + '">' +
-      '<div class="product-card-container">' +
-        '<div data-test="fop-body">' +
-          "<span>No unit price</span>" +
-        "</div>" +
-      "</div>" +
+    '<div data-test="fop-wrapper:' +
+    id +
+    '">' +
+    '<div class="product-card-container">' +
+    '<div data-test="fop-body">' +
+    "<span>No unit price</span>" +
+    "</div>" +
+    "</div>" +
     "</div>"
   );
 }
@@ -48,7 +52,9 @@ function morrisonsSortCombobox(selectedText) {
   if (!selectedText) selectedText = "Favourites First";
   return (
     '<div data-test="sort-button" role="combobox" tabindex="0">' +
-      "<span>" + selectedText + "</span>" +
+    "<span>" +
+    selectedText +
+    "</span>" +
     "</div>"
   );
 }
@@ -56,12 +62,12 @@ function morrisonsSortCombobox(selectedText) {
 function morrisonsListbox() {
   return (
     '<div role="listbox">' +
-      '<div role="option" data-value="favorite" data-name="Favourites First">Favourites First</div>' +
-      '<div role="option" data-value="pricePerAscending" data-name="Price per: Low to High">Price per: Low to High</div>' +
-      '<div role="option" data-value="pricePerDescending" data-name="Price per: High to Low">Price per: High to Low</div>' +
-      '<div role="option" data-value="priceAscending" data-name="Total Price: Low to High">Total Price: Low to High</div>' +
-      '<div role="option" data-value="priceDescending" data-name="Total Price: High to Low">Total Price: High to Low</div>' +
-      '<div role="option" data-value="customerRating" data-name="Customer rating">Customer rating</div>' +
+    '<div role="option" data-value="favorite" data-name="Favourites First">Favourites First</div>' +
+    '<div role="option" data-value="pricePerAscending" data-name="Price per: Low to High">Price per: Low to High</div>' +
+    '<div role="option" data-value="pricePerDescending" data-name="Price per: High to Low">Price per: High to Low</div>' +
+    '<div role="option" data-value="priceAscending" data-name="Total Price: Low to High">Total Price: Low to High</div>' +
+    '<div role="option" data-value="priceDescending" data-name="Total Price: High to Low">Total Price: High to Low</div>' +
+    '<div role="option" data-value="customerRating" data-name="Customer rating">Customer rating</div>' +
     "</div>"
   );
 }
@@ -71,14 +77,11 @@ function morrisonsListbox() {
 function setupDom(bodyHtml) {
   if (!bodyHtml) bodyHtml = "";
 
-  const dom = new JSDOM(
-    "<!doctype html><html><body>" + bodyHtml + "</body></html>",
-    {
-      url: "https://groceries.morrisons.com/categories/meat-fish/179549",
-      runScripts: "outside-only",
-      pretendToBeVisual: true,
-    }
-  );
+  const dom = new JSDOM("<!doctype html><html><body>" + bodyHtml + "</body></html>", {
+    url: "https://groceries.morrisons.com/categories/meat-fish/179549",
+    runScripts: "outside-only",
+    pretendToBeVisual: true,
+  });
 
   const { window } = dom;
   const warnings = [];
@@ -214,11 +217,11 @@ test("sortProductsByUnitPrice sorts products ascending by price", function () {
   const env = setupDom(
     '<div data-test="products-page">' +
       "<div>" +
-        morrisonsProduct("5.00", "kilo", "a") +
-        morrisonsProduct("2.00", "kilo", "b") +
-        morrisonsProduct("3.00", "kilo", "c") +
+      morrisonsProduct("5.00", "kilo", "a") +
+      morrisonsProduct("2.00", "kilo", "b") +
+      morrisonsProduct("3.00", "kilo", "c") +
       "</div>" +
-    "</div>"
+      "</div>",
   );
   try {
     env.hooks.sortProductsByUnitPrice();
@@ -240,11 +243,11 @@ test("sortProductsByUnitPrice puts no-price products last", function () {
   const env = setupDom(
     '<div data-test="products-page">' +
       "<div>" +
-        morrisonsProductNoPrice("x") +
-        morrisonsProduct("3.00", "kilo", "a") +
-        morrisonsProduct("1.00", "kilo", "b") +
+      morrisonsProductNoPrice("x") +
+      morrisonsProduct("3.00", "kilo", "a") +
+      morrisonsProduct("1.00", "kilo", "b") +
       "</div>" +
-    "</div>"
+      "</div>",
   );
   try {
     env.hooks.sortProductsByUnitPrice();
@@ -265,12 +268,12 @@ test("sortProductsByUnitPrice preserves skeletons at end", function () {
   const env = setupDom(
     '<div data-test="products-page">' +
       "<div>" +
-        morrisonsProduct("5.00", "kilo", "a") +
-        morrisonsSkeleton() +
-        morrisonsProduct("2.00", "kilo", "b") +
-        morrisonsSkeleton() +
+      morrisonsProduct("5.00", "kilo", "a") +
+      morrisonsSkeleton() +
+      morrisonsProduct("2.00", "kilo", "b") +
+      morrisonsSkeleton() +
       "</div>" +
-    "</div>"
+      "</div>",
   );
   try {
     env.hooks.sortProductsByUnitPrice();
@@ -297,12 +300,12 @@ test("sortProductsByUnitPrice groups by unit type", function () {
   const env = setupDom(
     '<div data-test="products-page">' +
       "<div>" +
-        morrisonsProduct("5.00", "each", "a") +
-        morrisonsProduct("8.00", "kilo", "b") +
-        morrisonsProduct("3.00", "kilo", "c") +
-        morrisonsProduct("2.00", "each", "d") +
+      morrisonsProduct("5.00", "each", "a") +
+      morrisonsProduct("8.00", "kilo", "b") +
+      morrisonsProduct("3.00", "kilo", "c") +
+      morrisonsProduct("2.00", "each", "d") +
       "</div>" +
-    "</div>"
+      "</div>",
   );
   try {
     env.hooks.sortProductsByUnitPrice();
@@ -326,9 +329,7 @@ test("sortProductsByUnitPrice groups by unit type", function () {
 
 test("selectPricePerOption returns true if already selected", async function (t) {
   const env = setupDom(
-    '<div data-test="products-page">' +
-      morrisonsSortCombobox("Price per: Low to High") +
-    "</div>"
+    '<div data-test="products-page">' + morrisonsSortCombobox("Price per: Low to High") + "</div>",
   );
   t.after(function () {
     env.hooks.resetObservers();
@@ -342,9 +343,7 @@ test("selectPricePerOption returns true if already selected", async function (t)
 
 test("selectPricePerOption clicks combobox and selects option", async function (t) {
   const env = setupDom(
-    '<div data-test="products-page">' +
-      morrisonsSortCombobox("Favourites First") +
-    "</div>"
+    '<div data-test="products-page">' + morrisonsSortCombobox("Favourites First") + "</div>",
   );
   t.after(function () {
     env.hooks.resetObservers();
@@ -379,9 +378,7 @@ test("selectPricePerOption clicks combobox and selects option", async function (
 
 test("selectPricePerOption falls back to text match when data-value missing", async function (t) {
   const env = setupDom(
-    '<div data-test="products-page">' +
-      morrisonsSortCombobox("Favourites First") +
-    "</div>"
+    '<div data-test="products-page">' + morrisonsSortCombobox("Favourites First") + "</div>",
   );
   t.after(function () {
     env.hooks.resetObservers();
@@ -416,9 +413,7 @@ test("selectPricePerOption falls back to text match when data-value missing", as
 
 test("selectPricePerOption returns false when listbox never appears", async function (t) {
   const env = setupDom(
-    '<div data-test="products-page">' +
-      morrisonsSortCombobox("Favourites First") +
-    "</div>"
+    '<div data-test="products-page">' + morrisonsSortCombobox("Favourites First") + "</div>",
   );
   t.after(function () {
     env.hooks.resetObservers();
@@ -430,9 +425,11 @@ test("selectPricePerOption returns false when listbox never appears", async func
 
   const result = await env.hooks.selectPricePerOption(combobox);
   assert.equal(result, false);
-  assert.ok(env.warnings.some(function (w) {
-    return w.includes("Listbox did not appear");
-  }));
+  assert.ok(
+    env.warnings.some(function (w) {
+      return w.includes("Listbox did not appear");
+    }),
+  );
 });
 
 // --- findSortCombobox Tests ---
@@ -451,10 +448,10 @@ test("findSortCombobox finds by data-test attribute", function () {
 
 test("findSortCombobox falls back to role=combobox near Sort by text", function () {
   const env = setupDom(
-    '<div>' +
-      '<h2>Sort by</h2>' +
+    "<div>" +
+      "<h2>Sort by</h2>" +
       '<div role="combobox" tabindex="0"><span>Favourites First</span></div>' +
-    "</div>"
+      "</div>",
   );
   try {
     const combobox = env.hooks.findSortCombobox();

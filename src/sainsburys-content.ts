@@ -34,7 +34,7 @@ import {
   function findSortDropdown(): HTMLSelectElement | null {
     // Strategy 1: Sainsbury's Fable select component in filter toolbar
     let select = document.querySelector<HTMLSelectElement>(
-      "div.filter-toolbar--sorting-select select.ds-c-select__select"
+      "div.filter-toolbar--sorting-select select.ds-c-select__select",
     );
     if (select) return select;
 
@@ -94,9 +94,7 @@ import {
 
     sortable.forEach((item) => list.appendChild(item.element));
 
-    console.log(
-      `${LOG_PREFIX} Sorted ${sortable.length} products by unit price`
-    );
+    console.log(`${LOG_PREFIX} Sorted ${sortable.length} products by unit price`);
   }
 
   // --- Observers ---
@@ -116,7 +114,7 @@ import {
 
     productObserver = new MutationObserver((mutations) => {
       const hasNewProducts = mutations.some(
-        (m) => m.addedNodes.length > 0 && m.type === "childList"
+        (m) => m.addedNodes.length > 0 && m.type === "childList",
       );
       if (!hasNewProducts) return;
 
@@ -153,7 +151,7 @@ import {
           valueSortActive = false;
         }
       },
-      true
+      true,
     );
 
     console.log(`${LOG_PREFIX} Injected "Value (Unit Price)" sort option`);
@@ -213,15 +211,13 @@ import {
       SORT_SELECT_SELECTOR,
       () => tryInject("sort selector"),
       10000,
-      { logPrefix: LOG_PREFIX }
+      { logPrefix: LOG_PREFIX },
     );
 
-    stopFallbackWatch = waitForElement(
-      "select",
-      () => tryInject("select fallback"),
-      10000,
-      { warnOnTimeout: false, logPrefix: LOG_PREFIX }
-    );
+    stopFallbackWatch = waitForElement("select", () => tryInject("select fallback"), 10000, {
+      warnOnTimeout: false,
+      logPrefix: LOG_PREFIX,
+    });
   }
 
   // Re-inject if React re-renders the <select> and removes our option
@@ -275,12 +271,9 @@ import {
     const loc = document.location;
     console.log(`${LOG_PREFIX} Initializing on ${loc.href}`);
 
-    stopProductListWatch = waitForElement(
-      PRODUCT_LIST_SELECTOR,
-      () => attemptInjection(),
-      10000,
-      { logPrefix: LOG_PREFIX }
-    );
+    stopProductListWatch = waitForElement(PRODUCT_LIST_SELECTOR, () => attemptInjection(), 10000, {
+      logPrefix: LOG_PREFIX,
+    });
 
     let lastUrl = loc.href;
 
@@ -309,7 +302,7 @@ import {
           PRODUCT_LIST_SELECTOR,
           () => attemptInjection(),
           10000,
-          { logPrefix: LOG_PREFIX }
+          { logPrefix: LOG_PREFIX },
         );
       }
     }).observe(document.body, { childList: true, subtree: true });
@@ -324,8 +317,12 @@ import {
       waitForElement,
       attemptInjection,
       init,
-      get valueSortActive() { return valueSortActive; },
-      set valueSortActive(v: boolean) { valueSortActive = v; },
+      get valueSortActive() {
+        return valueSortActive;
+      },
+      set valueSortActive(v: boolean) {
+        valueSortActive = v;
+      },
       sortByUnitPrice,
       observeProductList,
       getProductList,

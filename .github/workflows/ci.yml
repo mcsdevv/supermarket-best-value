@@ -7,20 +7,17 @@ on:
     branches: [main]
 
 jobs:
-  tests:
+  ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
+      - uses: oven-sh/setup-bun@v2
 
-      - run: npm ci
+      - run: bun install --frozen-lockfile
 
       - name: Typecheck, lint, and format
-        run: npm run check
+        run: bun run check
 
       - name: Test
-        run: npm test
+        run: bun test
