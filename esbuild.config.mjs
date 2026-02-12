@@ -16,19 +16,19 @@ const sharedOptions = {
 const configs = [
   {
     ...sharedOptions,
-    define: isProd ? { "window.__TESCO_VALUE_SORT_TEST_MODE__": "false" } : {},
+    define: isProd ? { "globalThis.__TESCO_VALUE_SORT_TEST_MODE__": "false" } : {},
     entryPoints: ["src/tesco-content.ts"],
     outfile: "dist/tesco-content.js",
   },
   {
     ...sharedOptions,
-    define: isProd ? { "window.__SAINSBURYS_VALUE_SORT_TEST_MODE__": "false" } : {},
+    define: isProd ? { "globalThis.__SAINSBURYS_VALUE_SORT_TEST_MODE__": "false" } : {},
     entryPoints: ["src/sainsburys-content.ts"],
     outfile: "dist/sainsburys-content.js",
   },
   {
     ...sharedOptions,
-    define: isProd ? { "window.__WAITROSE_VALUE_SORT_TEST_MODE__": "false" } : {},
+    define: isProd ? { "globalThis.__WAITROSE_VALUE_SORT_TEST_MODE__": "false" } : {},
     entryPoints: ["src/waitrose-content.ts"],
     outfile: "dist/waitrose-content.js",
   },
@@ -41,14 +41,10 @@ function copyAssets() {
 }
 
 if (isWatch) {
-  for (const config of configs) {
-    const ctx = await context(config);
-    await ctx.watch();
-  }
+  const contexts = await Promise.all(configs.map((config) => context(config)));
+  await Promise.all(contexts.map((ctx) => ctx.watch()));
   copyAssets();
 } else {
-  for (const config of configs) {
-    await build(config);
-  }
+  await Promise.all(configs.map((config) => build(config)));
   copyAssets();
 }
