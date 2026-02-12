@@ -115,20 +115,25 @@ import type {
     if (existing) return Promise.resolve(existing);
 
     return new Promise((resolve) => {
-      function settle(value: HTMLElement | null) {
-        observer.disconnect();
-        clearTimeout(timer);
-        resolve(value);
-      }
+      const ac = new AbortController();
 
       const observer = new MutationObserver(() => {
         const el = document.querySelector<HTMLElement>(selector);
-        if (el) settle(el);
+        if (el) {
+          ac.abort();
+          observer.disconnect();
+          resolve(el);
+        }
       });
 
       observer.observe(document.body, { childList: true, subtree: true });
 
-      const timer = setTimeout(() => settle(null), timeout);
+      setTimeout(() => {
+        if (!ac.signal.aborted) {
+          observer.disconnect();
+          resolve(null);
+        }
+      }, timeout);
     });
   }
 
