@@ -110,11 +110,11 @@ import type {
 
   // --- Utilities ---
 
-  async function waitForSelector(selector: string, timeout = 10000): Promise<HTMLElement | null> {
+  function waitForSelector(selector: string, timeout = 10000): Promise<HTMLElement | null> {
     const existing = document.querySelector<HTMLElement>(selector);
-    if (existing) return existing;
+    if (existing) return Promise.resolve(existing);
 
-    const result = await new Promise<HTMLElement | null>((resolve) => {
+    return new Promise((resolve) => {
       const ac = new AbortController();
 
       const observer = new MutationObserver(() => {
@@ -135,8 +135,6 @@ import type {
         }
       }, timeout);
     });
-
-    return result;
   }
 
   // --- Combobox Interaction ---
