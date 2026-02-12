@@ -232,3 +232,110 @@ test("selecting a different sort option clears valueSortActive", async (t) => {
   select.dispatchEvent(new env.window.Event("change", { bubbles: true }));
   assert.equal(env.hooks.valueSortActive, false, "valueSortActive should be cleared");
 });
+
+test("injectValueOption auto-selects Value sort and sorts products", async (t) => {
+  const env = setupDom(
+    '<select id="sort"><option value="relevance">Relevance</option></select>' +
+    '<ul data-auto="product-list">' +
+      '<li><span class="price__subtext">£5.00/kg</span></li>' +
+      '<li><span class="price__subtext">£2.00/kg</span></li>' +
+      '<li><span class="price__subtext">£3.00/kg</span></li>' +
+    '</ul>'
+  );
+  t.after(() => { env.hooks.resetObservers(); env.dom.window.close(); });
+
+  const select = env.document.getElementById("sort");
+  env.hooks.injectValueOption(select);
+
+  assert.equal(select.value, "value-sort");
+
+  const items = env.document.querySelectorAll('[data-auto="product-list"] > li');
+  const prices = Array.from(items).map(li => li.textContent);
+  assert.equal(prices[0], "£2.00/kg");
+  assert.equal(prices[1], "£3.00/kg");
+  assert.equal(prices[2], "£5.00/kg");
+});
+
+test("injectValueOption skips when option already exists", async (t) => {
+  const env = setupDom(
+    '<select id="sort"><option value="relevance">Relevance</option></select>' +
+    '<ul data-auto="product-list">' +
+      '<li><span class="price__subtext">£5.00/kg</span></li>' +
+      '<li><span class="price__subtext">£2.00/kg</span></li>' +
+    '</ul>'
+  );
+  t.after(() => { env.hooks.resetObservers(); env.dom.window.close(); });
+
+  const select = env.document.getElementById("sort");
+  env.hooks.injectValueOption(select);
+  assert.equal(select.value, "value-sort");
+
+  // Manually switch to another value
+  select.value = "relevance";
+
+  // Call again — should early-return, NOT re-select
+  env.hooks.injectValueOption(select);
+  assert.equal(select.value, "relevance");
+});
+
+test("observeSelectRerender re-selects after React resets value", async (t) => {
+  const env = setupDom(
+    '<div id="sort-wrap"><label>Sort by</label>' +
+    '<select><option value="relevance">Relevance</option></select></div>' +
+    '<ul data-auto="product-list">' +
+      '<li><span class="price__subtext">£5.00/kg</span></li>' +
+      '<li><span class="price__subtext">£2.00/kg</span></li>' +
+    '</ul>'
+  );
+  t.after(() => { env.hooks.resetObservers(); env.dom.window.close(); });
+
+  const select = env.document.querySelector("select");
+  env.hooks.injectValueOption(select);
+  env.hooks.observeSelectRerender(select);
+
+  assert.equal(select.value, "value-sort");
+
+  // Simulate React resetting value without removing option
+  select.value = "relevance";
+  env.document.body.appendChild(env.document.createElement("div"));
+
+  await delay(env.window, 30);
+
+  assert.equal(select.value, "value-sort");
+});
+
+test("attemptInjection auto-selects after deferred dropdown discovery", async (t) => {
+  const env = setupDom(
+    '<ul data-auto="product-list">' +
+      '<li><span class="price__subtext">£4.00/kg</span></li>' +
+      '<li><span class="price__subtext">£1.00/kg</span></li>' +
+    '</ul>'
+  );
+  t.after(() => { env.hooks.resetObservers(); env.dom.window.close(); });
+
+  env.hooks.attemptInjection();
+
+  await delay(env.window, 10);
+  const container = env.document.createElement("div");
+  const label = env.document.createElement("label");
+  label.textContent = "Sort by";
+  container.appendChild(label);
+  const sel = env.document.createElement("select");
+  sel.id = "sort";
+  const opt = env.document.createElement("option");
+  opt.value = "relevance";
+  opt.textContent = "Relevance";
+  sel.appendChild(opt);
+  container.appendChild(sel);
+  env.document.body.appendChild(container);
+
+  await delay(env.window, 30);
+
+  const select = container.querySelector("select");
+  assert.equal(select.value, "value-sort");
+
+  const items = env.document.querySelectorAll('[data-auto="product-list"] > li');
+  const prices = Array.from(items).map(li => li.textContent);
+  assert.equal(prices[0], "£1.00/kg");
+  assert.equal(prices[1], "£4.00/kg");
+});

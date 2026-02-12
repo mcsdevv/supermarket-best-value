@@ -259,6 +259,11 @@
     );
 
     console.log(`${LOG_PREFIX} Injected "Value (Unit Price)" sort option`);
+
+    // Auto-select Value sort on injection
+    select.value = VALUE_OPTION_ID;
+    sortByUnitPrice();
+    observeProductList();
   }
 
   // --- Utilities ---
@@ -389,6 +394,11 @@
       if (!currentSelect.querySelector(`option[value="${VALUE_OPTION_ID}"]`)) {
         console.log(`${LOG_PREFIX} Value option removed by re-render, re-injecting`);
         injectValueOption(currentSelect);
+      } else if (currentSelect.value !== VALUE_OPTION_ID) {
+        console.log(`${LOG_PREFIX} Value option deselected by re-render, re-selecting`);
+        currentSelect.value = VALUE_OPTION_ID;
+        sortByUnitPrice();
+        observeProductList();
       }
 
       if (valueSortActive && currentSelect.value !== VALUE_OPTION_ID) {
@@ -450,6 +460,9 @@
       attemptInjection,
       get valueSortActive() { return valueSortActive; },
       set valueSortActive(v) { valueSortActive = v; },
+      sortByUnitPrice,
+      observeProductList,
+      getProductList,
       resetObservers: () => {
         valueSortActive = false;
         if (productObserver) {
