@@ -118,13 +118,9 @@ import type {
         return;
       }
 
-      let done = false;
-
       const observer = new MutationObserver(() => {
-        if (done) return;
         const el = document.querySelector<HTMLElement>(selector);
         if (el) {
-          done = true;
           observer.disconnect();
           clearTimeout(timer);
           resolve(el);
@@ -134,8 +130,6 @@ import type {
       observer.observe(document.body, { childList: true, subtree: true });
 
       const timer = setTimeout(() => {
-        if (done) return;
-        done = true;
         observer.disconnect();
         resolve(null);
       }, timeout);
@@ -310,7 +304,7 @@ import type {
       return;
     }
 
-    selectPricePerOption(combobox).then((success) => {
+    void selectPricePerOption(combobox).then((success) => {
       if (success) {
         valueSortActive = true;
         observeComboboxResets();
@@ -323,19 +317,20 @@ import type {
     });
   }
 
+  function waitAndActivate(): void {
+    void waitForSelector(PRODUCTS_PAGE_SELECTOR, 10000).then((page) => {
+      if (!page) return;
+      return waitForSelector(SORT_COMBOBOX_SELECTOR, 10000).then((combobox) => {
+        if (combobox) activateSort();
+      });
+    });
+  }
+
   function init(): void {
     const loc = document.location;
     console.log(`${LOG_PREFIX} Initializing on ${loc.href}`);
 
-    waitForSelector(PRODUCTS_PAGE_SELECTOR, 10000).then((page) => {
-      if (!page) {
-        console.warn(`${LOG_PREFIX} Products page not found within 10s`);
-        return;
-      }
-      waitForSelector(SORT_COMBOBOX_SELECTOR, 10000).then((combobox) => {
-        if (combobox) activateSort();
-      });
-    });
+    waitAndActivate();
 
     // Watch for SPA navigation
     let lastUrl = loc.href;
@@ -354,12 +349,7 @@ import type {
           productObserver = null;
         }
 
-        waitForSelector(PRODUCTS_PAGE_SELECTOR, 10000).then((page) => {
-          if (!page) return;
-          waitForSelector(SORT_COMBOBOX_SELECTOR, 10000).then((combobox) => {
-            if (combobox) activateSort();
-          });
-        });
+        waitAndActivate();
       }
     }).observe(document.body, { childList: true, subtree: true });
   }
