@@ -259,42 +259,151 @@
 
   // --- Utilities ---
 
-  function waitForElement(selector, callback, maxWait = 10000) {
-    const el = document.querySelector(selector);
-    if (el) {
-      callback(el);
-      return;
+  function waitForElement(
+    selector,
+    callback,
+    maxWait = 10000,
+    { warnOnTimeout = true } = {}
+  ) {
+    let done = false;
+    let timeoutId = null;
+
+    const cleanup = (observer) => {
+      if (done) return;
+      done = true;
+      if (observer) observer.disconnect();
+      if (timeoutId !== null) clearTimeout(timeoutId);
+    };
+
+    const runCallbackIfFound = () => {
+      const found = document.querySelector(selector);
+      if (!found) return false;
+      // Returning false keeps the observer active.
+      return callback(found) !== false;
+    };
+
+    if (runCallbackIfFound()) {
+      done = true;
+      return () => {};
     }
 
-    const observer = new MutationObserver((_, obs) => {
-      const found = document.querySelector(selector);
-      if (found) {
-        obs.disconnect();
-        callback(found);
-      }
+    const observer = new MutationObserver(() => {
+      if (done) return;
+      if (runCallbackIfFound()) cleanup(observer);
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
-    setTimeout(() => observer.disconnect(), maxWait);
+    timeoutId = setTimeout(() => {
+      if (done) return;
+      cleanup(observer);
+      if (warnOnTimeout) {
+        console.warn(
+          `${LOG_PREFIX} Timed out waiting for "${selector}" after ${maxWait}ms`
+        );
+      }
+    }, maxWait);
+
+    return () => cleanup(observer);
   }
 
+  const SORT_SELECT_SELECTOR =
+    'select[id*="sort" i], select[data-auto*="sort" i]';
+
+  let stopSortWatchers = null;
+
   function attemptInjection() {
+    if (stopSortWatchers) {
+      stopSortWatchers();
+      stopSortWatchers = null;
+    }
+
     const select = findSortDropdown();
     if (select) {
+      console.log(`${LOG_PREFIX} Sort dropdown found immediately`);
       injectValueOption(select);
+      observeSelectRerender(select);
       return;
     }
 
-    // Dropdown may render late — wait for any select
-    waitForElement("select", () => {
+    console.log(`${LOG_PREFIX} Sort dropdown not found, watching for it...`);
+
+    let stopSpecificWatch = () => {};
+    let stopFallbackWatch = () => {};
+
+    stopSortWatchers = () => {
+      stopSpecificWatch();
+      stopFallbackWatch();
+      stopSortWatchers = null;
+    };
+
+    const tryInject = (source) => {
       const dropdown = findSortDropdown();
-      if (dropdown) injectValueOption(dropdown);
+      if (dropdown) {
+        if (stopSortWatchers) stopSortWatchers();
+        console.log(`${LOG_PREFIX} Sort dropdown found via ${source}`);
+        injectValueOption(dropdown);
+        observeSelectRerender(dropdown);
+        return true;
+      } else {
+        return false;
+      }
+    };
+
+    // Primary: sort-specific attributes
+    stopSpecificWatch = waitForElement(
+      SORT_SELECT_SELECTOR,
+      () => tryInject("sort selector")
+    );
+
+    // Fallback: any select (for pages where sort select lacks sort-specific attrs)
+    stopFallbackWatch = waitForElement(
+      "select",
+      () => tryInject("select fallback"),
+      10000,
+      { warnOnTimeout: false }
+    );
+  }
+
+  // Re-inject if React re-renders the <select> and removes our option
+  let selectObserver = null;
+
+  function observeSelectRerender(select) {
+    if (selectObserver) selectObserver.disconnect();
+
+    let observedSelect = select;
+    let syncScheduled = false;
+
+    const syncSelectOption = () => {
+      const currentSelect = findSortDropdown();
+      if (!currentSelect) return;
+
+      if (currentSelect !== observedSelect) {
+        observedSelect = currentSelect;
+        console.log(`${LOG_PREFIX} Sort dropdown replaced, re-binding`);
+      }
+
+      if (!currentSelect.querySelector(`option[value="${VALUE_OPTION_ID}"]`)) {
+        console.log(`${LOG_PREFIX} Value option removed by re-render, re-injecting`);
+        injectValueOption(currentSelect);
+      }
+    };
+
+    selectObserver = new MutationObserver(() => {
+      if (syncScheduled) return;
+      syncScheduled = true;
+      queueMicrotask(() => {
+        syncScheduled = false;
+        syncSelectOption();
+      });
     });
+
+    selectObserver.observe(document.body, { childList: true, subtree: true });
   }
 
   // --- Init ---
 
   function init() {
+    console.log(`${LOG_PREFIX} Initializing on ${location.href}`);
     attemptInjection();
 
     // Watch for SPA navigation (URL changes without full reload)
@@ -303,14 +412,49 @@
     new MutationObserver(() => {
       if (location.href !== lastUrl) {
         lastUrl = location.href;
-        // Clean up product observer from previous page
+        console.log(`${LOG_PREFIX} SPA navigation to ${location.href}`);
+        // Clean up observers from previous page
         if (productObserver) {
           productObserver.disconnect();
           productObserver = null;
         }
+        if (selectObserver) {
+          selectObserver.disconnect();
+          selectObserver = null;
+        }
+        if (stopSortWatchers) {
+          stopSortWatchers();
+          stopSortWatchers = null;
+        }
         waitForElement(PRODUCT_LIST_SELECTORS[0], () => attemptInjection());
       }
     }).observe(document.body, { childList: true, subtree: true });
+  }
+
+  if (window.__TESCO_VALUE_SORT_TEST_MODE__) {
+    window.__TESCO_VALUE_SORT_TEST_HOOKS__ = {
+      VALUE_OPTION_ID,
+      findSortDropdown,
+      injectValueOption,
+      observeSelectRerender,
+      waitForElement,
+      attemptInjection,
+      resetObservers: () => {
+        if (productObserver) {
+          productObserver.disconnect();
+          productObserver = null;
+        }
+        if (selectObserver) {
+          selectObserver.disconnect();
+          selectObserver = null;
+        }
+        if (stopSortWatchers) {
+          stopSortWatchers();
+          stopSortWatchers = null;
+        }
+      },
+    };
+    return;
   }
 
   init();

@@ -1,0 +1,10 @@
+{
+  "name": "tesco-value-sort",
+  "private": true,
+  "scripts": {
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.3"
+  }
+}
