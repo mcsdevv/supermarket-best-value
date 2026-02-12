@@ -12,8 +12,8 @@
     "test:morrisons": "npm run build && node --test tests/morrisons-content.test.js",
     "test:waitrose": "npm run build && node --test tests/waitrose.test.js",
     "package": "npm run build:prod && cd dist && zip -r ../supermarket-value-sort.zip .",
-    "lint": "oxlint src/ tests/ esbuild.config.mjs",
-    "lint:fix": "oxlint --fix src/ tests/ esbuild.config.mjs",
+    "lint": "oxlint src/*.ts tests/ esbuild.config.mjs",
+    "lint:fix": "oxlint --fix src/*.ts tests/ esbuild.config.mjs",
     "format": "oxfmt .",
     "format:check": "oxfmt --check",
     "check": "npm run typecheck && npm run lint && npm run format:check"
