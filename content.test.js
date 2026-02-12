@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { JSDOM } = require("jsdom");
 
-const SCRIPT_PATH = path.join(__dirname, "content.js");
+const SCRIPT_PATH = path.join(__dirname, "dist", "content.js");
 const SCRIPT_SOURCE = fs.readFileSync(SCRIPT_PATH, "utf8");
 
 function delay(window, ms) {

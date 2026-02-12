@@ -2,9 +2,16 @@
   "name": "tesco-value-sort",
   "private": true,
   "scripts": {
-    "test": "node --test"
+    "build": "node esbuild.config.mjs",
+    "build:prod": "node esbuild.config.mjs --prod",
+    "build:watch": "node esbuild.config.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test content.test.js",
+    "package": "npm run build:prod && cd dist && zip -r ../tesco-value-sort.zip ."
   },
   "devDependencies": {
-    "jsdom": "^24.1.3"
+    "esbuild": "^0.24.0",
+    "jsdom": "^24.1.3",
+    "typescript": "^5.7.0"
   }
 }

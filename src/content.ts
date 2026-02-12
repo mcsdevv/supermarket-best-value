@@ -1,8 +1,10 @@
+import type { ParsedPrice, NormalizedPrice, NormalizationEntry, SortableProduct } from "./types";
+
 (function () {
   "use strict";
 
-  const LOG_PREFIX = "[Tesco Value Sort]";
-  const VALUE_OPTION_ID = "value-sort";
+  const LOG_PREFIX = "[Tesco Value Sort]" as const;
+  const VALUE_OPTION_ID = "value-sort" as const;
   let valueSortActive = false;
 
   // --- Selectors ---
@@ -19,7 +21,7 @@
 
   // --- Normalization map ---
   // Converts all units to a base unit for fair comparison
-  const NORMALIZATION_MAP = {
+  const NORMALIZATION_MAP: Record<string, NormalizationEntry> = {
     // Weight → per kg
     g: { target: "kg", multiplier: 1000 },
     "100g": { target: "kg", multiplier: 10 },
@@ -53,11 +55,11 @@
   };
 
   // Unit group ordering for cross-unit sorting
-  const UNIT_GROUP_ORDER = ["kg", "litre", "each", "wash", "sht", "m"];
+  const UNIT_GROUP_ORDER: readonly string[] = ["kg", "litre", "each", "wash", "sht", "m"];
 
   // --- Parsing ---
 
-  function parseUnitPrice(text) {
+  function parseUnitPrice(text: string): ParsedPrice | null {
     const cleaned = text.trim().replace(/\s*DR\.?WT\.?\s*/gi, "");
     const match = cleaned.match(UNIT_PRICE_REGEX);
     if (!match) return null;
@@ -73,7 +75,7 @@
     return { price, unit };
   }
 
-  function normalizePrice(price, unit) {
+  function normalizePrice(price: number, unit: string): NormalizedPrice {
     const norm = NORMALIZATION_MAP[unit];
     if (!norm) {
       console.warn(`${LOG_PREFIX} Unknown unit: "${unit}"`);
@@ -86,11 +88,11 @@
     };
   }
 
-  function extractUnitPrice(card) {
+  function extractUnitPrice(card: Element): NormalizedPrice | null {
     const el = card.querySelector(UNIT_PRICE_SELECTOR);
     if (!el) return null;
 
-    const parsed = parseUnitPrice(el.textContent);
+    const parsed = parseUnitPrice(el.textContent ?? "");
     if (!parsed) return null;
 
     return normalizePrice(parsed.price, parsed.unit);
@@ -98,9 +100,9 @@
 
   // --- DOM finders ---
 
-  function findSortDropdown() {
+  function findSortDropdown(): HTMLSelectElement | null {
     // Strategy 1: data-auto or id containing "sort"
-    let select = document.querySelector(
+    let select = document.querySelector<HTMLSelectElement>(
       'select[id*="sort" i], select[data-auto*="sort" i]'
     );
     if (select) return select;
@@ -110,21 +112,21 @@
     for (const node of textNodes) {
       if (
         node.childElementCount === 0 &&
-        node.textContent.trim().toLowerCase().includes("sort by")
+        node.textContent?.trim().toLowerCase().includes("sort by")
       ) {
         const parent = node.closest("div, form, fieldset, section");
         if (parent) {
-          select = parent.querySelector("select");
+          select = parent.querySelector<HTMLSelectElement>("select");
           if (select) return select;
         }
       }
     }
 
     // Strategy 3: select with sorting-related options
-    const selects = document.querySelectorAll("select");
+    const selects = document.querySelectorAll<HTMLSelectElement>("select");
     for (const sel of selects) {
       const optTexts = Array.from(sel.options).map((o) =>
-        o.textContent.toLowerCase()
+        o.textContent?.toLowerCase() ?? ""
       );
       if (optTexts.some((t) => t.includes("relevance") || t.includes("price"))) {
         return sel;
@@ -134,21 +136,21 @@
     return null;
   }
 
-  function getProductList() {
+  function getProductList(): HTMLElement | null {
     for (const selector of PRODUCT_LIST_SELECTORS) {
-      const el = document.querySelector(selector);
+      const el = document.querySelector<HTMLElement>(selector);
       if (el) return el;
     }
     return null;
   }
 
-  function getProductCards(list) {
-    return Array.from(list.querySelectorAll(":scope > li"));
+  function getProductCards(list: HTMLElement): HTMLLIElement[] {
+    return Array.from(list.querySelectorAll<HTMLLIElement>(":scope > li"));
   }
 
   // --- Sorting ---
 
-  function sortByUnitPrice() {
+  function sortByUnitPrice(): void {
     const list = getProductList();
     if (!list) {
       console.error(`${LOG_PREFIX} Product list not found`);
@@ -161,7 +163,7 @@
       return;
     }
 
-    const sortable = cards.map((card) => ({
+    const sortable: SortableProduct[] = cards.map((card) => ({
       element: card,
       priceInfo: extractUnitPrice(card),
     }));
@@ -200,9 +202,9 @@
 
   // --- Observers ---
 
-  let productObserver = null;
+  let productObserver: MutationObserver | null = null;
 
-  function observeProductList() {
+  function observeProductList(): void {
     // Clean up previous observer
     if (productObserver) {
       productObserver.disconnect();
@@ -212,7 +214,7 @@
     const list = getProductList();
     if (!list) return;
 
-    let sortTimeout = null;
+    let sortTimeout: ReturnType<typeof setTimeout> | null = null;
 
     productObserver = new MutationObserver((mutations) => {
       const hasNewProducts = mutations.some(
@@ -224,7 +226,7 @@
       const select = findSortDropdown();
       if (!select || select.value !== VALUE_OPTION_ID) return;
 
-      clearTimeout(sortTimeout);
+      if (sortTimeout !== null) clearTimeout(sortTimeout);
       sortTimeout = setTimeout(() => sortByUnitPrice(), 300);
     });
 
@@ -233,7 +235,7 @@
 
   // --- Injection ---
 
-  function injectValueOption(select) {
+  function injectValueOption(select: HTMLSelectElement): void {
     if (select.querySelector(`option[value="${VALUE_OPTION_ID}"]`)) return;
 
     const option = document.createElement("option");
@@ -269,22 +271,22 @@
   // --- Utilities ---
 
   function waitForElement(
-    selector,
-    callback,
+    selector: string,
+    callback: (el: Element) => boolean | void,
     maxWait = 10000,
-    { warnOnTimeout = true } = {}
-  ) {
+    { warnOnTimeout = true }: { warnOnTimeout?: boolean } = {}
+  ): () => void {
     let done = false;
-    let timeoutId = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-    const cleanup = (observer) => {
+    const cleanup = (observer?: MutationObserver): void => {
       if (done) return;
       done = true;
       if (observer) observer.disconnect();
       if (timeoutId !== null) clearTimeout(timeoutId);
     };
 
-    const runCallbackIfFound = () => {
+    const runCallbackIfFound = (): boolean => {
       const found = document.querySelector(selector);
       if (!found) return false;
       // Returning false keeps the observer active.
@@ -318,10 +320,10 @@
   const SORT_SELECT_SELECTOR =
     'select[id*="sort" i], select[data-auto*="sort" i]';
 
-  let stopSortWatchers = null;
-  let stopProductListWatch = null;
+  let stopSortWatchers: (() => void) | null = null;
+  let stopProductListWatch: (() => void) | null = null;
 
-  function attemptInjection() {
+  function attemptInjection(): void {
     if (stopSortWatchers) {
       stopSortWatchers();
       stopSortWatchers = null;
@@ -337,8 +339,8 @@
 
     console.log(`${LOG_PREFIX} Sort dropdown not found, watching for it...`);
 
-    let stopSpecificWatch = () => {};
-    let stopFallbackWatch = () => {};
+    let stopSpecificWatch = (): void => {};
+    let stopFallbackWatch = (): void => {};
 
     stopSortWatchers = () => {
       stopSpecificWatch();
@@ -346,7 +348,7 @@
       stopSortWatchers = null;
     };
 
-    const tryInject = (source) => {
+    const tryInject = (source: string): boolean => {
       const dropdown = findSortDropdown();
       if (dropdown) {
         if (stopSortWatchers) stopSortWatchers();
@@ -375,15 +377,15 @@
   }
 
   // Re-inject if React re-renders the <select> and removes our option
-  let selectObserver = null;
+  let selectObserver: MutationObserver | null = null;
 
-  function observeSelectRerender(select) {
+  function observeSelectRerender(select: HTMLSelectElement): void {
     if (selectObserver) selectObserver.disconnect();
 
     let observedSelect = select;
     let syncScheduled = false;
 
-    const syncSelectOption = () => {
+    const syncSelectOption = (): void => {
       const currentSelect = findSortDropdown();
       if (!currentSelect) return;
 
@@ -421,7 +423,7 @@
 
   // --- Init ---
 
-  function init() {
+  function init(): void {
     const loc = document.location;
     console.log(`${LOG_PREFIX} Initializing on ${loc.href}`);
 
@@ -475,7 +477,7 @@
       attemptInjection,
       init,
       get valueSortActive() { return valueSortActive; },
-      set valueSortActive(v) { valueSortActive = v; },
+      set valueSortActive(v: boolean) { valueSortActive = v; },
       sortByUnitPrice,
       observeProductList,
       getProductList,
