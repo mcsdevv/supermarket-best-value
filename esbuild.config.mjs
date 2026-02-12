@@ -26,6 +26,12 @@ const configs = [
     entryPoints: ["src/sainsburys-content.ts"],
     outfile: "dist/sainsburys-content.js",
   },
+  {
+    ...sharedOptions,
+    define: isProd ? { "window.__MORRISONS_VALUE_SORT_TEST_MODE__": "false" } : {},
+    entryPoints: ["src/morrisons-content.ts"],
+    outfile: "dist/morrisons-content.js",
+  },
 ];
 
 function copyAssets() {

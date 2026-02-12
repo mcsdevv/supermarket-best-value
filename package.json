@@ -9,6 +9,7 @@
     "test": "npm run build && node --test 'tests/*.test.js'",
     "test:tesco": "npm run build && node --test tests/content.test.js",
     "test:sainsburys": "npm run build && node --test tests/sainsburys-content.test.js",
+    "test:morrisons": "npm run build && node --test tests/morrisons-content.test.js",
     "package": "npm run build:prod && cd dist && zip -r ../supermarket-value-sort.zip .",
     "lint": "oxlint src/ tests/ esbuild.config.mjs",
     "lint:fix": "oxlint --fix src/ tests/ esbuild.config.mjs",
