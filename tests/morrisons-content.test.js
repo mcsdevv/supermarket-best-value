@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { JSDOM } = require("jsdom");
 
-const SCRIPT_PATH = path.join(__dirname, "..", "morrisons-content.js");
+const SCRIPT_PATH = path.join(__dirname, "..", "dist", "morrisons-content.js");
 const SCRIPT_SOURCE = fs.readFileSync(SCRIPT_PATH, "utf8");
 
 // --- HTML Helpers ---
