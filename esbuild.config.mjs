@@ -17,8 +17,8 @@ const configs = [
   {
     ...sharedOptions,
     define: isProd ? { "window.__TESCO_VALUE_SORT_TEST_MODE__": "false" } : {},
-    entryPoints: ["src/content.ts"],
-    outfile: "dist/content.js",
+    entryPoints: ["src/tesco-content.ts"],
+    outfile: "dist/tesco-content.js",
   },
   {
     ...sharedOptions,
@@ -35,8 +35,8 @@ const configs = [
   {
     ...sharedOptions,
     define: isProd ? { "window.__WAITROSE_VALUE_SORT_TEST_MODE__": "false" } : {},
-    entryPoints: ["src/waitrose.ts"],
-    outfile: "dist/waitrose.js",
+    entryPoints: ["src/waitrose-content.ts"],
+    outfile: "dist/waitrose-content.js",
   },
 ];
 

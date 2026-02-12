@@ -6,7 +6,7 @@
   "content_scripts": [
     {
       "matches": ["https://www.tesco.com/groceries/*"],
-      "js": ["content.js"],
+      "js": ["tesco-content.js"],
       "run_at": "document_idle"
     },
     {
@@ -21,7 +21,7 @@
     },
     {
       "matches": ["https://www.waitrose.com/ecom/shop/*"],
-      "js": ["waitrose.js"],
+      "js": ["waitrose-content.js"],
       "run_at": "document_idle"
     }
   ],

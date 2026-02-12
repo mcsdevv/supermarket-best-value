@@ -1,9 +1,5 @@
-import type {
-  MorrisonsParsedPrice,
-  MorrisonsNormalizedPrice,
-  MorrisonsNormalizationEntry,
-  MorrisonsSortableProduct,
-} from "./morrisons-types";
+import type { ParsedPrice, NormalizedPrice, SortableProduct } from "./types";
+import { normalizePrice, compareByUnitPrice } from "./shared";
 
 (function () {
   "use strict";
@@ -26,55 +22,22 @@ import type {
   // Matches: "(£6.30 per kilo)", "(£1.50 per litre)", "(£0.15 per 100ml)"
   const MORRISONS_PRICE_REGEX = /\(£([\d.]+)\s+per\s+(.+?)\)/i;
 
-  // --- Normalization map ---
-  const NORMALIZATION_MAP: Record<string, MorrisonsNormalizationEntry> = {
-    kilo: { target: "kg", multiplier: 1 },
-    kg: { target: "kg", multiplier: 1 },
-    "100g": { target: "kg", multiplier: 10 },
-    litre: { target: "litre", multiplier: 1 },
-    ltr: { target: "litre", multiplier: 1 },
-    "100ml": { target: "litre", multiplier: 10 },
-    ml: { target: "litre", multiplier: 1000 },
-    each: { target: "each", multiplier: 1 },
-    ea: { target: "each", multiplier: 1 },
-    sht: { target: "sht", multiplier: 1 },
-    "100sht": { target: "sht", multiplier: 0.01 },
-    wash: { target: "wash", multiplier: 1 },
-    m: { target: "m", multiplier: 1 },
-    mtr: { target: "m", multiplier: 1 },
-  };
-
-  const UNIT_GROUP_ORDER: readonly string[] = ["kg", "litre", "each", "wash", "sht", "m"];
-
   // --- Parsing ---
 
-  function parseUnitPrice(text: string): MorrisonsParsedPrice | null {
+  function parseUnitPrice(text: string): ParsedPrice | null {
     const match = text.match(MORRISONS_PRICE_REGEX);
     if (!match) return null;
     return { price: parseFloat(match[1]), unit: match[2].trim().toLowerCase() };
   }
 
-  function normalizePrice(price: number, unit: string): MorrisonsNormalizedPrice {
-    const norm = NORMALIZATION_MAP[unit];
-    if (!norm) {
-      console.warn(`${LOG_PREFIX} Unknown unit: "${unit}"`);
-      return { price, unit, comparable: false };
-    }
-    return {
-      price: price * norm.multiplier,
-      unit: norm.target,
-      comparable: true,
-    };
-  }
-
-  function extractUnitPrice(card: Element): MorrisonsNormalizedPrice | null {
+  function extractUnitPrice(card: Element): NormalizedPrice | null {
     const el = card.querySelector(UNIT_PRICE_SELECTOR);
     if (!el) return null;
 
     const parsed = parseUnitPrice(el.textContent ?? "");
     if (!parsed) return null;
 
-    return normalizePrice(parsed.price, parsed.unit);
+    return normalizePrice(parsed.price, parsed.unit, LOG_PREFIX);
   }
 
   // --- DOM finders ---
@@ -200,34 +163,12 @@ import type {
     // Collect skeletons to re-append at end
     const skeletons = Array.from(container.querySelectorAll<HTMLElement>(SKELETON_SELECTOR));
 
-    const sortable: MorrisonsSortableProduct[] = wrappers.map((el) => ({
+    const sortable: SortableProduct[] = wrappers.map((el) => ({
       element: el,
       priceInfo: extractUnitPrice(el),
     }));
 
-    sortable.sort((a, b) => {
-      const aInfo = a.priceInfo;
-      const bInfo = b.priceInfo;
-
-      // No price → bottom
-      if (!aInfo && !bInfo) return 0;
-      if (!aInfo) return 1;
-      if (!bInfo) return -1;
-
-      // Same unit → compare price directly
-      if (aInfo.unit === bInfo.unit) {
-        return aInfo.price - bInfo.price;
-      }
-
-      // Different units → group by unit type, then sort within group
-      const aOrder = UNIT_GROUP_ORDER.indexOf(aInfo.unit);
-      const bOrder = UNIT_GROUP_ORDER.indexOf(bInfo.unit);
-      const aIdx = aOrder === -1 ? 999 : aOrder;
-      const bIdx = bOrder === -1 ? 999 : bOrder;
-
-      if (aIdx !== bIdx) return aIdx - bIdx;
-      return aInfo.price - bInfo.price;
-    });
+    sortable.sort((a, b) => compareByUnitPrice(a.priceInfo, b.priceInfo));
 
     // Reorder DOM: products first, then skeletons
     sortable.forEach((item) => container.appendChild(item.element));
@@ -365,7 +306,7 @@ import type {
       findSortCombobox,
       selectPricePerOption,
       parseUnitPrice,
-      normalizePrice,
+      normalizePrice: (price: number, unit: string) => normalizePrice(price, unit, LOG_PREFIX),
       extractUnitPrice,
       sortProductsByUnitPrice,
       getProductContainer,
