@@ -11,7 +11,7 @@ import { normalizePrice, compareByUnitPrice, waitForElement } from "./shared";
   // --- Selectors (partial class match for resilience to CSS hash changes) ---
   const UNIT_PRICE_SELECTOR = '[class*="pricePerUnit___"]';
   const PRODUCT_GRID_SELECTOR = '[class*="flexGrid___"]';
-  const PRODUCT_CARD_SELECTOR = '[class*="productPod___"]';
+  const PRODUCT_CARD_SELECTOR = 'article[class*="productPod___"]';
   const SORT_CONTAINER_SELECTOR = '[class*="sortBy___"]';
   const SORT_BUTTON_SELECTOR = '[class*="dropdownButton___"]';
 
