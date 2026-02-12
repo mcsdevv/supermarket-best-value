@@ -319,6 +319,7 @@
     'select[id*="sort" i], select[data-auto*="sort" i]';
 
   let stopSortWatchers = null;
+  let stopProductListWatch = null;
 
   function attemptInjection() {
     if (stopSortWatchers) {
@@ -421,16 +422,24 @@
   // --- Init ---
 
   function init() {
-    console.log(`${LOG_PREFIX} Initializing on ${location.href}`);
-    attemptInjection();
+    const loc = document.location;
+    console.log(`${LOG_PREFIX} Initializing on ${loc.href}`);
+
+    // Gate on product list to ensure page is sufficiently rendered before
+    // looking for the sort dropdown. waitForElement checks immediately first,
+    // so pages where the product list is already in the DOM work without delay.
+    const productListSelector = PRODUCT_LIST_SELECTORS.join(", ");
+    stopProductListWatch = waitForElement(productListSelector, () =>
+      attemptInjection()
+    );
 
     // Watch for SPA navigation (URL changes without full reload)
-    let lastUrl = location.href;
+    let lastUrl = loc.href;
 
     new MutationObserver(() => {
-      if (location.href !== lastUrl) {
-        lastUrl = location.href;
-        console.log(`${LOG_PREFIX} SPA navigation to ${location.href}`);
+      if (loc.href !== lastUrl) {
+        lastUrl = loc.href;
+        console.log(`${LOG_PREFIX} SPA navigation to ${loc.href}`);
         valueSortActive = false;
         // Clean up observers from previous page
         if (productObserver) {
@@ -445,7 +454,13 @@
           stopSortWatchers();
           stopSortWatchers = null;
         }
-        waitForElement(PRODUCT_LIST_SELECTORS[0], () => attemptInjection());
+        if (stopProductListWatch) {
+          stopProductListWatch();
+          stopProductListWatch = null;
+        }
+        stopProductListWatch = waitForElement(productListSelector, () =>
+          attemptInjection()
+        );
       }
     }).observe(document.body, { childList: true, subtree: true });
   }
@@ -458,6 +473,7 @@
       observeSelectRerender,
       waitForElement,
       attemptInjection,
+      init,
       get valueSortActive() { return valueSortActive; },
       set valueSortActive(v) { valueSortActive = v; },
       sortByUnitPrice,
@@ -476,6 +492,10 @@
         if (stopSortWatchers) {
           stopSortWatchers();
           stopSortWatchers = null;
+        }
+        if (stopProductListWatch) {
+          stopProductListWatch();
+          stopProductListWatch = null;
         }
       },
     };

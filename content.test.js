@@ -339,3 +339,52 @@ test("attemptInjection auto-selects after deferred dropdown discovery", async (t
   assert.equal(prices[0], "£1.00/kg");
   assert.equal(prices[1], "£4.00/kg");
 });
+
+test("init gates injection on product list appearing", async (t) => {
+  const env = setupDom();
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
+
+  // Call init on an empty page — no product list, no sort dropdown
+  env.hooks.init();
+
+  await delay(env.window, 10);
+
+  // Sort dropdown added but no product list yet — should NOT inject
+  const sortWrap = env.document.createElement("div");
+  const label = env.document.createElement("label");
+  label.textContent = "Sort by";
+  const select = env.document.createElement("select");
+  const opt = env.document.createElement("option");
+  opt.value = "relevance";
+  opt.textContent = "Relevance";
+  select.appendChild(opt);
+  sortWrap.appendChild(label);
+  sortWrap.appendChild(select);
+  env.document.body.appendChild(sortWrap);
+
+  await delay(env.window, 30);
+
+  assert.equal(
+    select.querySelector(`option[value="${env.hooks.VALUE_OPTION_ID}"]`),
+    null,
+    "should not inject before product list appears"
+  );
+
+  // Now add the product list — injection should trigger
+  const productList = env.document.createElement("ul");
+  productList.setAttribute("data-auto", "product-list");
+  const li = env.document.createElement("li");
+  li.textContent = "Product 1";
+  productList.appendChild(li);
+  env.document.body.appendChild(productList);
+
+  await delay(env.window, 30);
+
+  assert.ok(
+    select.querySelector(`option[value="${env.hooks.VALUE_OPTION_ID}"]`),
+    "should inject after product list appears"
+  );
+});
