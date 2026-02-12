@@ -28,12 +28,6 @@ const configs = [
   },
   {
     ...sharedOptions,
-    define: isProd ? { "window.__MORRISONS_VALUE_SORT_TEST_MODE__": "false" } : {},
-    entryPoints: ["src/morrisons-content.ts"],
-    outfile: "dist/morrisons-content.js",
-  },
-  {
-    ...sharedOptions,
     define: isProd ? { "window.__WAITROSE_VALUE_SORT_TEST_MODE__": "false" } : {},
     entryPoints: ["src/waitrose-content.ts"],
     outfile: "dist/waitrose-content.js",

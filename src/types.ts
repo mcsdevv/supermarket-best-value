@@ -46,23 +46,6 @@ interface SiteTestHooks {
   resetObservers: () => void;
 }
 
-interface MorrisonsValueSortTestHooks {
-  findSortCombobox: () => HTMLElement | null;
-  selectPricePerOption: (combobox: HTMLElement) => Promise<boolean>;
-  parseUnitPrice: (text: string) => ParsedPrice | null;
-  normalizePrice: (price: number, unit: string) => NormalizedPrice;
-  extractUnitPrice: (card: Element) => NormalizedPrice | null;
-  sortProductsByUnitPrice: () => void;
-  getProductContainer: () => HTMLElement | null;
-  observeComboboxResets: () => void;
-  observeProductLoads: () => void;
-  waitForSelector: (selector: string, timeout?: number) => Promise<HTMLElement | null>;
-  activateSort: () => void;
-  init: () => void;
-  valueSortActive: boolean;
-  resetObservers: () => void;
-}
-
 interface WaitroseValueSortTestHooks {
   VALUE_OPTION_NAME: string;
   findSortContainers: () => Element[];
@@ -95,10 +78,6 @@ declare global {
   var __SAINSBURYS_VALUE_SORT_TEST_MODE__: boolean | undefined;
   // eslint-disable-next-line no-var
   var __SAINSBURYS_VALUE_SORT_TEST_HOOKS__: SiteTestHooks | undefined;
-  // eslint-disable-next-line no-var
-  var __MORRISONS_VALUE_SORT_TEST_MODE__: boolean | undefined;
-  // eslint-disable-next-line no-var
-  var __MORRISONS_VALUE_SORT_TEST_HOOKS__: MorrisonsValueSortTestHooks | undefined;
   // eslint-disable-next-line no-var
   var __WAITROSE_VALUE_SORT_TEST_MODE__: boolean | undefined;
   // eslint-disable-next-line no-var

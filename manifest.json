@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Supermarket Value Sort",
   "version": "1.3.0",
-  "description": "Adds a 'Value' sort option to supermarket websites that sorts products by unit price (lowest first). Supports Tesco, Sainsbury's, Morrisons, and Waitrose.",
+  "description": "Adds a 'Value' sort option to supermarket websites that sorts products by unit price (lowest first). Supports Tesco, Sainsbury's, and Waitrose.",
   "content_scripts": [
     {
       "matches": ["https://www.tesco.com/groceries/*"],
@@ -12,11 +12,6 @@
     {
       "matches": ["https://www.sainsburys.co.uk/gol-ui/groceries/*"],
       "js": ["sainsburys-content.js"],
-      "run_at": "document_idle"
-    },
-    {
-      "matches": ["https://groceries.morrisons.com/*"],
-      "js": ["morrisons-content.js"],
       "run_at": "document_idle"
     },
     {

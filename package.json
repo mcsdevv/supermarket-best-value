@@ -9,7 +9,6 @@
     "test": "bun run build && node --test tests/*.test.js",
     "test:tesco": "bun run build && node --test tests/tesco-content.test.js",
     "test:sainsburys": "bun run build && node --test tests/sainsburys-content.test.js",
-    "test:morrisons": "bun run build && node --test tests/morrisons-content.test.js",
     "test:waitrose": "bun run build && node --test tests/waitrose-content.test.js",
     "package": "bun run build:prod && cd dist && zip -r ../supermarket-value-sort.zip .",
     "lint": "oxlint src/*.ts tests/ esbuild.config.mjs",
