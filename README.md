@@ -1,5 +1,7 @@
 # Supermarket Value Sort
 
+[![Tests](https://github.com/mcsdevv/supermarket-best-value/actions/workflows/tests.yml/badge.svg)](https://github.com/mcsdevv/supermarket-best-value/actions/workflows/tests.yml)
+
 A Chrome extension that adds a "Value (Unit Price)" sort option to UK supermarket websites. It sorts products from cheapest to most expensive per unit (per kg, per litre, per item, etc.) so you can find the best deal at a glance.
 
 ## How It Works
