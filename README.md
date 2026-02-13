@@ -6,7 +6,7 @@ A Chrome extension that adds a "Value (Unit Price)" sort option to UK supermarke
 
 ## How It Works
 
-When you visit a supported supermarket's grocery pages, the extension:
+When you visit a [supported supermarket's](#supported-supermarkets) grocery pages, the extension:
 
 1. Adds a "Value (Unit Price)" option to the site's existing sort dropdown
 2. Automatically sorts products by unit price on page load
