@@ -1,0 +1,68 @@
+name: Bug Report
+description: Report something that isn't working correctly
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: supermarket
+    attributes:
+      label: Supermarket
+      description: Which supermarket website were you using?
+      options:
+        - Tesco
+        - Sainsbury's
+        - Waitrose
+    validations:
+      required: true
+
+  - type: input
+    id: url
+    attributes:
+      label: Page URL
+      description: The URL of the page where the issue occurred.
+      placeholder: https://www.tesco.com/groceries/en-GB/shop/...
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe what you saw.
+      placeholder: The sort option didn't appear in the dropdown...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      description: Describe what you expected to happen instead.
+      placeholder: I expected products to be sorted by unit price...
+    validations:
+      required: true
+
+  - type: input
+    id: browser-version
+    attributes:
+      label: Browser version
+      description: "Paste the output of chrome://version or your browser's version string."
+      placeholder: "Chrome 131.0.6778.86"
+    validations:
+      required: true
+
+  - type: input
+    id: extension-version
+    attributes:
+      label: Extension version
+      description: "Found in chrome://extensions or the extension popup."
+      placeholder: "1.4.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: If applicable, add screenshots to help explain the problem. Drag and drop images here.
+    validations:
+      required: false

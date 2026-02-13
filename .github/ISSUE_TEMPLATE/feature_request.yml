@@ -1,0 +1,35 @@
+name: Feature Request
+description: Suggest an improvement or new feature
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What would you like the extension to do?
+      placeholder: It would be useful if the extension could...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: supermarket
+    attributes:
+      label: Related supermarket(s)
+      description: Does this relate to a specific supermarket?
+      multiple: true
+      options:
+        - Tesco
+        - Sainsbury's
+        - Waitrose
+        - All / not specific
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use case
+      description: Why would this be useful? What problem does it solve?
+      placeholder: When I'm shopping for..., I want to...
+    validations:
+      required: true

@@ -24,6 +24,14 @@ Products without a unit price are moved to the bottom of the list.
 
 > **Note:** Morrisons, Ocado, and Asda already offer unit price sorting on their websites, so this extension is not needed for those stores.
 
+## Known Limitations
+
+- **Chrome only.** This is a Manifest V3 Chrome extension. It does not work in Firefox, Safari, or other browsers. Chromium-based browsers like Edge and Brave may work but are not tested.
+- **Sorts only what's on the page.** The extension reorders products already loaded in the browser. It cannot fetch additional products or sort across multiple pages of results.
+- **Requires unit prices to be displayed.** If a supermarket hides unit prices for certain products or categories, those products will appear at the bottom of the sorted list.
+- **May break after site redesigns.** The extension relies on each supermarket's current page structure and CSS class names. When a supermarket updates their website, the extension may stop working until it is updated to match.
+- **Limited to grocery browsing pages.** The extension activates on category and browse pages. It may not work on search results, offers pages, or other non-standard layouts where the sort dropdown or product grid differs.
+
 ## Install
 
 1. Download or clone this repository
@@ -41,6 +49,10 @@ bun run build
 ```
 
 The built extension files will be in `dist/`.
+
+## Problems and Feature Requests
+
+If something isn't working or you have an idea for an improvement, please [open an issue](https://github.com/mcsdevv/supermarket-best-value/issues/new/choose). Bug reports and feature requests both have templates to help you provide the right details.
 
 ## Privacy
 
