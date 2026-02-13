@@ -11,6 +11,17 @@ function delay(window, ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+function setAutoSortSetting(window, enabled) {
+  window.chrome = {
+    storage: {
+      local: {
+        get: (_key, callback) => callback({ autoSort: enabled }),
+        set: () => {},
+      },
+    },
+  };
+}
+
 // --- DOM Helpers ---
 
 function createSortContainer(doc) {
@@ -503,6 +514,38 @@ test("init gates injection on product grid appearing", async (t) => {
     env.hooks.valueSortActive,
     true,
     "valueSortActive should be true after grid appears",
+  );
+});
+
+test("init does not auto-activate when auto-sort setting is off", async (t) => {
+  const env = setupDom();
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
+
+  setAutoSortSetting(env.window, false);
+
+  env.hooks.init();
+  await delay(env.window, 10);
+
+  // Add sort container but no product grid
+  const sort = createSortContainer(env.document);
+  env.document.body.appendChild(sort.container);
+
+  await delay(env.window, 30);
+  assert.equal(env.hooks.valueSortActive, false);
+
+  // Now add product grid
+  const grid = createProductGrid(env.document, [{ name: "A", unitPrice: "\u00a32.00/kg" }]);
+  env.document.body.appendChild(grid);
+
+  await delay(env.window, 50);
+
+  assert.equal(
+    env.hooks.valueSortActive,
+    false,
+    "valueSortActive should remain false when auto-sort setting is off",
   );
 });
 

@@ -5,6 +5,7 @@ import {
   normalizePrice,
   compareByUnitPrice,
   waitForElement,
+  getAutoSortSetting,
 } from "./shared";
 
 (function () {
@@ -193,10 +194,16 @@ import {
 
     console.log(`${LOG_PREFIX} Injected "Value (Unit Price)" sort option`);
 
-    select.value = VALUE_OPTION_ID;
-    updateDropdownLabel(select, "Value (Unit Price)");
-    sortByUnitPrice();
-    observeProductList();
+    void (async () => {
+      const autoSort = await getAutoSortSetting();
+      if (autoSort) {
+        valueSortActive = true;
+        select.value = VALUE_OPTION_ID;
+        updateDropdownLabel(select, "Value (Unit Price)");
+        sortByUnitPrice();
+        observeProductList();
+      }
+    })();
   }
 
   // --- Attempt injection ---
@@ -289,7 +296,7 @@ import {
       if (!currentSelect.querySelector(`option[value="${VALUE_OPTION_ID}"]`)) {
         console.log(`${LOG_PREFIX} Value option removed by re-render, re-injecting`);
         injectValueOption(currentSelect);
-      } else if (currentSelect.value !== VALUE_OPTION_ID) {
+      } else if (valueSortActive && currentSelect.value !== VALUE_OPTION_ID) {
         console.log(`${LOG_PREFIX} Value option deselected by re-render, re-selecting`);
         currentSelect.value = VALUE_OPTION_ID;
         updateDropdownLabel(currentSelect, "Value (Unit Price)");
@@ -300,6 +307,8 @@ import {
       if (valueSortActive && currentSelect.value !== VALUE_OPTION_ID) {
         currentSelect.value = VALUE_OPTION_ID;
         updateDropdownLabel(currentSelect, "Value (Unit Price)");
+        sortByUnitPrice();
+        observeProductList();
       }
     };
 

@@ -1,5 +1,5 @@
 import type { ParsedPrice, NormalizedPrice, SortableProduct } from "./types";
-import { normalizePrice, compareByUnitPrice, waitForElement } from "./shared";
+import { compareByUnitPrice, getAutoSortSetting, normalizePrice, waitForElement } from "./shared";
 
 (function () {
   "use strict";
@@ -382,12 +382,17 @@ import { normalizePrice, compareByUnitPrice, waitForElement } from "./shared";
         injectValueOption(container);
       }
 
-      // Auto-activate value sort
-      valueSortActive = true;
-      sortByUnitPrice();
-      observeProductGrid();
-      updateAllButtonTexts("Value (Unit Price)");
-      observeButtonRerender();
+      // Auto-activate value sort if setting is enabled
+      void (async () => {
+        const autoSort = await getAutoSortSetting();
+        if (autoSort) {
+          valueSortActive = true;
+          sortByUnitPrice();
+          observeProductGrid();
+          updateAllButtonTexts("Value (Unit Price)");
+          observeButtonRerender();
+        }
+      })();
       return;
     }
 
@@ -404,12 +409,17 @@ import { normalizePrice, compareByUnitPrice, waitForElement } from "./shared";
           injectValueOption(container);
         }
 
-        // Auto-activate value sort
-        valueSortActive = true;
-        sortByUnitPrice();
-        observeProductGrid();
-        updateAllButtonTexts("Value (Unit Price)");
-        observeButtonRerender();
+        // Auto-activate value sort if setting is enabled
+        void (async () => {
+          const autoSort = await getAutoSortSetting();
+          if (autoSort) {
+            valueSortActive = true;
+            sortByUnitPrice();
+            observeProductGrid();
+            updateAllButtonTexts("Value (Unit Price)");
+            observeButtonRerender();
+          }
+        })();
         return true;
       },
       10000,
