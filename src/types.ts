@@ -40,6 +40,7 @@ interface SiteTestHooks {
   attemptInjection: () => void;
   init: () => void;
   valueSortActive: boolean;
+  extractUnitPrice?: (card: Element) => NormalizedPrice | null;
   sortByUnitPrice: () => void;
   observeProductList: () => void;
   getProductList: () => HTMLElement | null;

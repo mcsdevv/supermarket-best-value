@@ -463,3 +463,108 @@ test("label observer restores span text after React re-render", async (t) => {
     "label text should be restored after React re-render",
   );
 });
+
+// --- Clubcard Price tests ---
+
+test("extractUnitPrice uses Clubcard unit price when lower than regular", async (t) => {
+  const env = setupDom(
+    '<ul data-auto="product-list">' +
+      "<li>" +
+      '<div class="promotionsWithClubcardPriceContainer">' +
+      '<p class="ddsweb-value-bar__content-subtext">(£6.00/kg)</p>' +
+      "</div>" +
+      '<span class="ddsweb-price__subtext">£7.00/kg</span>' +
+      "</li>" +
+      "</ul>",
+  );
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
+
+  const card = env.document.querySelector('[data-auto="product-list"] > li');
+  const result = env.hooks.extractUnitPrice(card);
+
+  assert.ok(result, "should return a price");
+  assert.equal(result.price, 6.0);
+  assert.equal(result.unit, "kg");
+});
+
+test("extractUnitPrice uses regular price when no Clubcard present", async (t) => {
+  const env = setupDom(
+    '<ul data-auto="product-list">' +
+      "<li>" +
+      '<span class="ddsweb-price__subtext">£3.50/kg</span>' +
+      "</li>" +
+      "</ul>",
+  );
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
+
+  const card = env.document.querySelector('[data-auto="product-list"] > li');
+  const result = env.hooks.extractUnitPrice(card);
+
+  assert.ok(result, "should return a price");
+  assert.equal(result.price, 3.5);
+  assert.equal(result.unit, "kg");
+});
+
+test("extractUnitPrice falls back to regular when Clubcard text is unparseable", async (t) => {
+  const env = setupDom(
+    '<ul data-auto="product-list">' +
+      "<li>" +
+      '<div class="promotionsWithClubcardPriceContainer">' +
+      '<p class="ddsweb-value-bar__content-subtext">(save 20%)</p>' +
+      "</div>" +
+      '<span class="ddsweb-price__subtext">£5.00/kg</span>' +
+      "</li>" +
+      "</ul>",
+  );
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
+
+  const card = env.document.querySelector('[data-auto="product-list"] > li');
+  const result = env.hooks.extractUnitPrice(card);
+
+  assert.ok(result, "should return regular price as fallback");
+  assert.equal(result.price, 5.0);
+  assert.equal(result.unit, "kg");
+});
+
+test("sortByUnitPrice ranks Clubcard-discounted items by their lower unit price", async (t) => {
+  const env = setupDom(
+    '<select id="sort"><option value="relevance">Relevance</option></select>' +
+      '<ul data-auto="product-list">' +
+      "<li>" +
+      '<span class="ddsweb-price__subtext">£5.00/kg</span>' +
+      "</li>" +
+      "<li>" +
+      '<div class="promotionsWithClubcardPriceContainer">' +
+      '<p class="ddsweb-value-bar__content-subtext">(£3.00/kg)</p>' +
+      "</div>" +
+      '<span class="ddsweb-price__subtext">£7.00/kg</span>' +
+      "</li>" +
+      "<li>" +
+      '<span class="ddsweb-price__subtext">£4.00/kg</span>' +
+      "</li>" +
+      "</ul>",
+  );
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
+
+  const select = env.document.querySelector("#sort");
+  env.hooks.injectValueOption(select);
+
+  const items = env.document.querySelectorAll('[data-auto="product-list"] > li');
+  const prices = [...items].map((li) => li.querySelector('[class*="price__subtext"]').textContent);
+  // Clubcard item (£3.00/kg effective) should be first, then £4.00, then £5.00
+  assert.equal(prices[0], "£7.00/kg"); // this card's effective price is £3.00/kg via clubcard
+  assert.equal(prices[1], "£4.00/kg");
+  assert.equal(prices[2], "£5.00/kg");
+});

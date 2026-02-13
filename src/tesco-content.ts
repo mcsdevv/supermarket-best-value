@@ -15,23 +15,37 @@ import {
 
   // --- Selectors ---
   const UNIT_PRICE_SELECTOR = '[class*="price__subtext"]';
+  const CLUBCARD_UNIT_PRICE_SELECTOR = '[class*="value-bar__content-subtext"]';
   const PRODUCT_LIST_SELECTORS = ['[data-auto="product-list"]', "#list-content", "ul.product-list"];
   const DROPDOWN_LABEL_SELECTOR = ".ddsweb-dropdown__select-span";
 
   // --- Extraction ---
 
-  function extractUnitPrice(card: Element) {
-    const el = card.querySelector(UNIT_PRICE_SELECTOR);
-    if (!el) {
-      return null;
-    }
-
-    const parsed = parseUnitPrice(el.textContent ?? "");
+  function parseAndNormalize(text: string) {
+    const parsed = parseUnitPrice(text);
     if (!parsed) {
       return null;
     }
-
     return normalizePrice(parsed.price, parsed.unit, LOG_PREFIX);
+  }
+
+  function extractUnitPrice(card: Element) {
+    const regularEl = card.querySelector(UNIT_PRICE_SELECTOR);
+    const clubcardEl = card.querySelector(CLUBCARD_UNIT_PRICE_SELECTOR);
+
+    const regularPrice = regularEl ? parseAndNormalize(regularEl.textContent ?? "") : null;
+    const clubcardPrice = clubcardEl
+      ? parseAndNormalize(clubcardEl.textContent?.replaceAll(/[()]/g, "") ?? "")
+      : null;
+
+    if (clubcardPrice && regularPrice) {
+      if (clubcardPrice.unit === regularPrice.unit) {
+        return clubcardPrice.price <= regularPrice.price ? clubcardPrice : regularPrice;
+      }
+      return clubcardPrice;
+    }
+
+    return clubcardPrice ?? regularPrice ?? null;
   }
 
   // --- DOM finders ---
@@ -442,6 +456,7 @@ import {
           stopProductListWatch = null;
         }
       },
+      extractUnitPrice,
       sortByUnitPrice,
       get valueSortActive() {
         return valueSortActive;
