@@ -8,7 +8,7 @@ const sharedOptions = {
   bundle: true,
   format: "iife",
   logLevel: "info",
-  minify: false,
+  minify: isProd,
   sourcemap: false,
   target: "chrome120",
 };

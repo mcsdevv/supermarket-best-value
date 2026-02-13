@@ -411,6 +411,19 @@ import { compareByUnitPrice, getAutoSortSetting, normalizePrice, waitForElement 
   let stopSortWatchers: (() => void) | null = null;
   let stopProductGridWatch: (() => void) | null = null;
 
+  function autoActivateValueSort(): void {
+    void (async () => {
+      const autoSort = await getAutoSortSetting();
+      if (autoSort) {
+        valueSortActive = true;
+        sortByUnitPrice();
+        observeProductGrid();
+        updateAllButtonTexts("Value (Unit Price)");
+        observeButtonRerender();
+      }
+    })();
+  }
+
   function attemptInjection(): void {
     if (stopSortWatchers) {
       stopSortWatchers();
@@ -424,17 +437,7 @@ import { compareByUnitPrice, getAutoSortSetting, normalizePrice, waitForElement 
         injectValueOption(container);
       }
 
-      // Auto-activate value sort if setting is enabled
-      void (async () => {
-        const autoSort = await getAutoSortSetting();
-        if (autoSort) {
-          valueSortActive = true;
-          sortByUnitPrice();
-          observeProductGrid();
-          updateAllButtonTexts("Value (Unit Price)");
-          observeButtonRerender();
-        }
-      })();
+      autoActivateValueSort();
       return;
     }
 
@@ -453,17 +456,7 @@ import { compareByUnitPrice, getAutoSortSetting, normalizePrice, waitForElement 
           injectValueOption(container);
         }
 
-        // Auto-activate value sort if setting is enabled
-        void (async () => {
-          const autoSort = await getAutoSortSetting();
-          if (autoSort) {
-            valueSortActive = true;
-            sortByUnitPrice();
-            observeProductGrid();
-            updateAllButtonTexts("Value (Unit Price)");
-            observeButtonRerender();
-          }
-        })();
+        autoActivateValueSort();
         return true;
       },
       10_000,

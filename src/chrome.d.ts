@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-redeclare -- Augments built-in chrome namespace for extension APIs
 declare namespace chrome {
   namespace storage {
     interface StorageArea {

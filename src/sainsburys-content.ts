@@ -1,10 +1,10 @@
 import {
   VALUE_OPTION_ID,
   compareByUnitPrice,
+  getAutoSortSetting,
   normalizePrice,
   parseUnitPrice,
   waitForElement,
-  getAutoSortSetting,
 } from "./shared";
 import type { SortableProduct } from "./types";
 
@@ -344,6 +344,9 @@ import type { SortableProduct } from "./types";
       });
     });
 
+    // Body-level observer is required: React may replace any ancestor of the select.
+    // Value property changes (not attributes) can only be caught indirectly.
+    // The syncScheduled flag batches callbacks to at most once per microtask.
     selectObserver.observe(document.body, { childList: true, subtree: true });
   }
 
