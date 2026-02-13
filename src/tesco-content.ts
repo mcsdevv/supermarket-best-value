@@ -1,38 +1,53 @@
-import type { SortableProduct } from "./types";
 import {
   VALUE_OPTION_ID,
-  parseUnitPrice,
-  normalizePrice,
   compareByUnitPrice,
+  normalizePrice,
+  parseUnitPrice,
   waitForElement,
   getAutoSortSetting,
 } from "./shared";
+import type { SortableProduct } from "./types";
 
 (function () {
   "use strict";
 
   const LOG_PREFIX = "[Tesco Value Sort]" as const;
+  const VALUE_OPTION_TEXT = "Value (Unit Price)" as const;
   let valueSortActive = false;
 
   // --- Selectors ---
   const UNIT_PRICE_SELECTOR = '[class*="price__subtext"]';
+  const CLUBCARD_UNIT_PRICE_SELECTOR = '[class*="value-bar__content-subtext"]';
   const PRODUCT_LIST_SELECTORS = ['[data-auto="product-list"]', "#list-content", "ul.product-list"];
   const DROPDOWN_LABEL_SELECTOR = ".ddsweb-dropdown__select-span";
 
   // --- Extraction ---
 
-  function extractUnitPrice(card: Element) {
-    const el = card.querySelector(UNIT_PRICE_SELECTOR);
-    if (!el) {
-      return null;
-    }
-
-    const parsed = parseUnitPrice(el.textContent ?? "");
+  function parseAndNormalize(text: string) {
+    const parsed = parseUnitPrice(text);
     if (!parsed) {
       return null;
     }
-
     return normalizePrice(parsed.price, parsed.unit, LOG_PREFIX);
+  }
+
+  function extractUnitPrice(card: Element) {
+    const regularEl = card.querySelector(UNIT_PRICE_SELECTOR);
+    const clubcardEl = card.querySelector(CLUBCARD_UNIT_PRICE_SELECTOR);
+
+    const regularPrice = regularEl ? parseAndNormalize(regularEl.textContent ?? "") : null;
+    const clubcardPrice = clubcardEl
+      ? parseAndNormalize(clubcardEl.textContent?.replaceAll(/[()]/g, "") ?? "")
+      : null;
+
+    if (clubcardPrice && regularPrice) {
+      if (clubcardPrice.unit === regularPrice.unit) {
+        return clubcardPrice.price <= regularPrice.price ? clubcardPrice : regularPrice;
+      }
+      return clubcardPrice;
+    }
+
+    return clubcardPrice ?? regularPrice ?? null;
   }
 
   // --- DOM finders ---
@@ -98,6 +113,25 @@ import {
 
   // --- Sorting ---
 
+  let productObserver: MutationObserver | null = null;
+  let productSortTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  function clearPendingProductSort(): void {
+    if (productSortTimeout !== null) {
+      clearTimeout(productSortTimeout);
+      productSortTimeout = null;
+    }
+  }
+
+  function deactivateValueSort(): void {
+    valueSortActive = false;
+    clearPendingProductSort();
+    if (productObserver) {
+      productObserver.disconnect();
+      productObserver = null;
+    }
+  }
+
   function sortByUnitPrice(): void {
     const list = getProductList();
     if (!list) {
@@ -118,15 +152,29 @@ import {
 
     sortable.sort((a, b) => compareByUnitPrice(a.priceInfo, b.priceInfo));
 
-    // Reorder DOM — appendChild moves existing nodes (no cloning)
-    sortable.forEach((item) => list.append(item.element));
+    // Pause observation while reordering to avoid self-triggered loops.
+    const observerToResume = valueSortActive ? productObserver : null;
+    if (observerToResume) {
+      observerToResume.disconnect();
+    }
+
+    try {
+      for (const item of sortable) {
+        list.append(item.element);
+      }
+    } finally {
+      if (observerToResume && valueSortActive) {
+        const currentList = getProductList();
+        if (currentList) {
+          observerToResume.observe(currentList, { childList: true });
+        }
+      }
+    }
 
     console.log(`${LOG_PREFIX} Sorted ${sortable.length} products by unit price`);
   }
 
   // --- Observers ---
-
-  let productObserver: MutationObserver | null = null;
 
   function observeProductList(): void {
     if (productObserver) {
@@ -138,8 +186,7 @@ import {
     if (!list) {
       return;
     }
-
-    let sortTimeout: ReturnType<typeof setTimeout> | null = null;
+    clearPendingProductSort();
 
     productObserver = new MutationObserver((mutations) => {
       const hasNewProducts = mutations.some(
@@ -154,10 +201,13 @@ import {
         return;
       }
 
-      if (sortTimeout !== null) {
-        clearTimeout(sortTimeout);
-      }
-      sortTimeout = setTimeout(() => sortByUnitPrice(), 300);
+      clearPendingProductSort();
+      productSortTimeout = setTimeout(() => {
+        productSortTimeout = null;
+        if (valueSortActive) {
+          sortByUnitPrice();
+        }
+      }, 300);
     });
 
     productObserver.observe(list, { childList: true });
@@ -165,45 +215,54 @@ import {
 
   // --- Injection ---
 
-  function injectValueOption(select: HTMLSelectElement): void {
-    if (select.querySelector(`option[value="${VALUE_OPTION_ID}"]`)) {
-      return;
+  const boundSelects = new WeakSet<HTMLSelectElement>();
+
+  function injectValueOption(
+    select: HTMLSelectElement,
+    { autoActivate = true }: { autoActivate?: boolean } = {},
+  ): void {
+    const hasValueOption = Boolean(select.querySelector(`option[value="${VALUE_OPTION_ID}"]`));
+    if (!hasValueOption) {
+      const option = document.createElement("option");
+      option.value = VALUE_OPTION_ID;
+      option.textContent = VALUE_OPTION_TEXT;
+      select.append(option);
+      console.log(`${LOG_PREFIX} Injected "${VALUE_OPTION_TEXT}" sort option`);
     }
 
-    const option = document.createElement("option");
-    option.value = VALUE_OPTION_ID;
-    option.textContent = "Value (Unit Price)";
-    select.append(option);
+    if (!boundSelects.has(select)) {
+      select.addEventListener(
+        "change",
+        (e) => {
+          if (select.value === VALUE_OPTION_ID) {
+            valueSortActive = true;
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            updateDropdownLabel(select, VALUE_OPTION_TEXT);
+            sortByUnitPrice();
+            observeProductList();
+          } else {
+            deactivateValueSort();
+          }
+        },
+        true,
+      );
+      boundSelects.add(select);
+    }
 
-    select.addEventListener(
-      "change",
-      (e) => {
-        if (select.value === VALUE_OPTION_ID) {
-          valueSortActive = true;
-          e.stopImmediatePropagation();
-          e.preventDefault();
-          updateDropdownLabel(select, "Value (Unit Price)");
-          sortByUnitPrice();
-          observeProductList();
-        } else {
-          valueSortActive = false;
+    if (autoActivate && !hasValueOption && !valueSortActive) {
+      void (async () => {
+        const autoSort = await getAutoSortSetting();
+        if (!autoSort || valueSortActive) {
+          return;
         }
-      },
-      true,
-    );
-
-    console.log(`${LOG_PREFIX} Injected "Value (Unit Price)" sort option`);
-
-    void (async () => {
-      const autoSort = await getAutoSortSetting();
-      if (autoSort) {
         valueSortActive = true;
         select.value = VALUE_OPTION_ID;
-        updateDropdownLabel(select, "Value (Unit Price)");
+        updateDropdownLabel(select, VALUE_OPTION_TEXT);
         sortByUnitPrice();
         observeProductList();
-      }
-    })();
+      })();
+    }
   }
 
   // --- Attempt injection ---
@@ -213,23 +272,14 @@ import {
   let stopSortWatchers: (() => void) | null = null;
   let stopProductListWatch: (() => void) | null = null;
 
-  function attemptInjection(): void {
-    if (stopSortWatchers) {
-      stopSortWatchers();
-      stopSortWatchers = null;
-    }
+  function bindSortDropdown(select: HTMLSelectElement, source: string): void {
+    console.log(`${LOG_PREFIX} Sort dropdown ${source}`);
+    injectValueOption(select);
+    observeSelectRerender(select);
+    observeLabelRerender();
+  }
 
-    const select = findSortDropdown();
-    if (select) {
-      console.log(`${LOG_PREFIX} Sort dropdown found immediately`);
-      injectValueOption(select);
-      observeSelectRerender(select);
-      observeLabelRerender();
-      return;
-    }
-
-    console.log(`${LOG_PREFIX} Sort dropdown not found, watching for it...`);
-
+  function watchForSortDropdown(): void {
     let stopSpecificWatch = (): void => {};
     let stopFallbackWatch = (): void => {};
 
@@ -241,17 +291,15 @@ import {
 
     const tryInject = (source: string): boolean => {
       const dropdown = findSortDropdown();
-      if (dropdown) {
-        if (stopSortWatchers) {
-          stopSortWatchers();
-        }
-        console.log(`${LOG_PREFIX} Sort dropdown found via ${source}`);
-        injectValueOption(dropdown);
-        observeSelectRerender(dropdown);
-        observeLabelRerender();
-        return true;
+      if (!dropdown) {
+        return false;
       }
-      return false;
+
+      if (stopSortWatchers) {
+        stopSortWatchers();
+      }
+      bindSortDropdown(dropdown, `found via ${source}`);
+      return true;
     };
 
     // Primary: sort-specific attributes
@@ -269,6 +317,22 @@ import {
       logPrefix: LOG_PREFIX,
       warnOnTimeout: false,
     });
+  }
+
+  function attemptInjection(): void {
+    if (stopSortWatchers) {
+      stopSortWatchers();
+      stopSortWatchers = null;
+    }
+
+    const select = findSortDropdown();
+    if (select) {
+      bindSortDropdown(select, "found immediately");
+      return;
+    }
+
+    console.log(`${LOG_PREFIX} Sort dropdown not found, watching for it...`);
+    watchForSortDropdown();
   }
 
   // Re-inject if React re-renders the <select> and removes our option
@@ -295,18 +359,13 @@ import {
 
       if (!currentSelect.querySelector(`option[value="${VALUE_OPTION_ID}"]`)) {
         console.log(`${LOG_PREFIX} Value option removed by re-render, re-injecting`);
-        injectValueOption(currentSelect);
-      } else if (valueSortActive && currentSelect.value !== VALUE_OPTION_ID) {
-        console.log(`${LOG_PREFIX} Value option deselected by re-render, re-selecting`);
-        currentSelect.value = VALUE_OPTION_ID;
-        updateDropdownLabel(currentSelect, "Value (Unit Price)");
-        sortByUnitPrice();
-        observeProductList();
+        injectValueOption(currentSelect, { autoActivate: valueSortActive });
       }
 
       if (valueSortActive && currentSelect.value !== VALUE_OPTION_ID) {
+        console.log(`${LOG_PREFIX} Value option deselected by re-render, re-selecting`);
         currentSelect.value = VALUE_OPTION_ID;
-        updateDropdownLabel(currentSelect, "Value (Unit Price)");
+        updateDropdownLabel(currentSelect, VALUE_OPTION_TEXT);
         sortByUnitPrice();
         observeProductList();
       }
@@ -354,8 +413,8 @@ import {
         }
 
         const label = currentSelect.parentElement?.querySelector(DROPDOWN_LABEL_SELECTOR);
-        if (label && !label.textContent?.includes("Value (Unit Price)")) {
-          label.textContent = "Value (Unit Price)";
+        if (label && !label.textContent?.includes(VALUE_OPTION_TEXT)) {
+          label.textContent = VALUE_OPTION_TEXT;
         }
       });
     });
@@ -383,11 +442,7 @@ import {
       if (loc.href !== lastUrl) {
         lastUrl = loc.href;
         console.log(`${LOG_PREFIX} SPA navigation to ${loc.href}`);
-        valueSortActive = false;
-        if (productObserver) {
-          productObserver.disconnect();
-          productObserver = null;
-        }
+        deactivateValueSort();
         if (selectObserver) {
           selectObserver.disconnect();
           selectObserver = null;
@@ -429,11 +484,7 @@ import {
       observeSelectRerender,
       updateDropdownLabel,
       resetObservers: () => {
-        valueSortActive = false;
-        if (productObserver) {
-          productObserver.disconnect();
-          productObserver = null;
-        }
+        deactivateValueSort();
         if (selectObserver) {
           selectObserver.disconnect();
           selectObserver = null;
@@ -451,6 +502,7 @@ import {
           stopProductListWatch = null;
         }
       },
+      extractUnitPrice,
       sortByUnitPrice,
       get valueSortActive() {
         return valueSortActive;
