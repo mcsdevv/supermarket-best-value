@@ -1,0 +1,40 @@
+Supermarket Value Sort adds a "Value (Unit Price)" sort option to UK supermarket websites so you can instantly find the cheapest products per unit — per kg, per litre, per item, and more.
+
+HOW IT WORKS
+
+When you visit a supported supermarket's grocery pages, the extension:
+
+• Adds a "Value (Unit Price)" option to the site's existing sort dropdown
+• Automatically sorts products from cheapest to most expensive per unit on page load (configurable)
+• Re-sorts when you navigate between categories or load more products
+
+The extension reads the unit price already displayed on each product card (e.g. "£4.34/kg") and normalises different units so they're compared fairly. A product priced "per 100g" is correctly compared against one priced "per kg". Products without a unit price are moved to the bottom.
+
+SUPPORTED SUPERMARKETS
+
+• Tesco (tesco.com/groceries)
+• Sainsbury's (sainsburys.co.uk/groceries)
+• Waitrose (waitrose.com/ecom/shop)
+
+Note: Morrisons, Ocado, and Asda already offer unit price sorting natively.
+
+FEATURES
+
+• One-click value sorting — instantly find the best deal
+• Auto-sort on page load — toggle on/off from the popup
+• Smart unit normalisation — compares kg vs 100g, litres vs 100ml, etc.
+• Handles Tesco Clubcard prices — uses the lower of regular and Clubcard unit price
+• Works with SPA navigation — re-applies when browsing between categories
+• Survives React re-renders — the sort option persists even when the page dynamically updates
+
+PRIVACY
+
+This extension runs entirely in your browser. It makes zero network requests, collects no data, and sends nothing to any server. The only data stored is your auto-sort preference, saved locally on your device using chrome.storage.local. No analytics, no tracking, no third-party services.
+
+PERMISSIONS
+
+The extension only requests the "storage" permission — used solely for remembering your auto-sort preference. It has no access to your tabs, browsing history, or any other browser data.
+
+OPEN SOURCE
+
+Supermarket Value Sort is open source under the MIT license. View the source code, report issues, or contribute at: https://github.com/mcsdevv/supermarket-best-value

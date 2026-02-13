@@ -8,9 +8,11 @@ const sharedOptions = {
   bundle: true,
   format: "iife",
   logLevel: "info",
-  minify: false,
+  minify: isProd,
+  pure: isProd ? ["console.log"] : [],
   sourcemap: false,
   target: "chrome120",
+  treeShaking: isProd,
 };
 
 const configs = [
