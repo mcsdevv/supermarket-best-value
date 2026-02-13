@@ -11,7 +11,7 @@ import type { SortableProduct } from "./types";
 (function () {
   "use strict";
 
-  const LOG_PREFIX = "[Tesco Value Sort]" as const;
+  const LOG_PREFIX = "[Tesco Unit Value]" as const;
   const VALUE_OPTION_TEXT = "Value (Unit Price)" as const;
   let valueSortActive = false;
 

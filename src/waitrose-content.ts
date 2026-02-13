@@ -4,7 +4,7 @@ import { compareByUnitPrice, getAutoSortSetting, normalizePrice, waitForElement 
 (function () {
   "use strict";
 
-  const LOG_PREFIX = "[Waitrose Value Sort]" as const;
+  const LOG_PREFIX = "[Waitrose Unit Value]" as const;
   const VALUE_OPTION_NAME = "VALUE_UNIT_PRICE" as const;
   let valueSortActive = false;
 

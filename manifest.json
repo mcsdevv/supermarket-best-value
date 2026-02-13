@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Supermarket Value Sort",
+  "name": "Supermarket Unit Value",
   "version": "1.4.0",
   "description": "Adds a 'Value' sort option to supermarket websites that sorts products by unit price (lowest first). Supports Tesco, Sainsbury's, and Waitrose.",
-  "homepage_url": "https://github.com/mcsdevv/supermarket-best-value",
+  "homepage_url": "https://github.com/mcsdevv/supermarket-unit-value",
   "permissions": ["storage"],
   "action": {
     "default_popup": "popup.html",
@@ -40,7 +40,7 @@
       "suggested_key": {
         "default": "Alt+Shift+V"
       },
-      "description": "Open Value Sort settings"
+      "description": "Open Unit Value settings"
     }
   }
 }
