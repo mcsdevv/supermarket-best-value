@@ -1,5 +1,5 @@
-import type { ParsedPrice, NormalizedPrice, SortableProduct } from "./types";
-import { normalizePrice, compareByUnitPrice, waitForElement } from "./shared";
+import type { NormalizedPrice, ParsedPrice, SortableProduct } from "./types";
+import { compareByUnitPrice, normalizePrice, waitForElement } from "./shared";
 
 (function () {
   "use strict";
@@ -27,10 +27,14 @@ import { normalizePrice, compareByUnitPrice, waitForElement } from "./shared";
     const cleaned = text.replace(/Price per unit/i, "").trim();
 
     // "per kg" with no numeric value → unparseable
-    if (/^per\s+/i.test(cleaned)) return null;
+    if (/^per\s+/i.test(cleaned)) {
+      return null;
+    }
 
     const match = cleaned.match(WAITROSE_UNIT_PRICE_REGEX);
-    if (!match) return null;
+    if (!match) {
+      return null;
+    }
 
     let price = parseFloat(match[1]);
     const unit = match[2].trim().toLowerCase();
@@ -45,10 +49,14 @@ import { normalizePrice, compareByUnitPrice, waitForElement } from "./shared";
 
   function extractUnitPrice(card: Element): NormalizedPrice | null {
     const el = card.querySelector(UNIT_PRICE_SELECTOR);
-    if (!el) return null;
+    if (!el) {
+      return null;
+    }
 
     const parsed = parseWaitroseUnitPrice(el.textContent ?? "");
-    if (!parsed) return null;
+    if (!parsed) {
+      return null;
+    }
 
     return normalizePrice(parsed.price, parsed.unit, LOG_PREFIX);
   }
@@ -98,7 +106,7 @@ import { normalizePrice, compareByUnitPrice, waitForElement } from "./shared";
 
     try {
       for (const item of sortable) {
-        grid.appendChild(item.element);
+        grid.append(item.element);
       }
     } finally {
       if (observerToResume) {
@@ -123,7 +131,9 @@ import { normalizePrice, compareByUnitPrice, waitForElement } from "./shared";
     }
 
     const grid = getProductGrid();
-    if (!grid) return;
+    if (!grid) {
+      return;
+    }
 
     let sortTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -133,10 +143,10 @@ import { normalizePrice, compareByUnitPrice, waitForElement } from "./shared";
       }
 
       for (const node of mutation.addedNodes) {
-        if (!(node instanceof Element)) {
-          continue;
-        }
-        if (node.matches(PRODUCT_CARD_SELECTOR) || node.querySelector(PRODUCT_CARD_SELECTOR)) {
+        if (
+          node instanceof Element &&
+          (node.matches(PRODUCT_CARD_SELECTOR) || node.querySelector(PRODUCT_CARD_SELECTOR))
+        ) {
           return true;
         }
       }
@@ -149,7 +159,9 @@ import { normalizePrice, compareByUnitPrice, waitForElement } from "./shared";
         return;
       }
 
-      if (sortTimeout !== null) clearTimeout(sortTimeout);
+      if (sortTimeout !== null) {
+        clearTimeout(sortTimeout);
+      }
       sortTimeout = setTimeout(() => sortByUnitPrice(), 300);
     });
 
@@ -160,7 +172,9 @@ import { normalizePrice, compareByUnitPrice, waitForElement } from "./shared";
 
   function getButtonTextSpan(container: Element): Element | null {
     const btn = container.querySelector(SORT_BUTTON_SELECTOR);
-    if (!btn) return null;
+    if (!btn) {
+      return null;
+    }
     return btn.querySelector('[class*="typography___"]');
   }
 
@@ -190,11 +204,15 @@ import { normalizePrice, compareByUnitPrice, waitForElement } from "./shared";
     let syncScheduled = false;
 
     buttonObserver = new MutationObserver(() => {
-      if (!valueSortActive || syncScheduled) return;
+      if (!valueSortActive || syncScheduled) {
+        return;
+      }
       syncScheduled = true;
       queueMicrotask(() => {
         syncScheduled = false;
-        if (!valueSortActive) return;
+        if (!valueSortActive) {
+          return;
+        }
 
         for (const container of findSortContainers()) {
           const span = getButtonTextSpan(container);
@@ -211,6 +229,40 @@ import { normalizePrice, compareByUnitPrice, waitForElement } from "./shared";
   // --- Dropdown injection ---
 
   const dropdownObservers: MutationObserver[] = [];
+
+  function activateValueSortFromOption(
+    label: HTMLElement,
+    radio: HTMLInputElement | null,
+    event: Event,
+  ): void {
+    event.stopImmediatePropagation();
+    event.preventDefault();
+    valueSortActive = true;
+
+    for (const container of findSortContainers()) {
+      for (const r of container.querySelectorAll('input[type="radio"]')) {
+        (r as HTMLInputElement).checked = false;
+      }
+    }
+
+    if (radio) {
+      radio.checked = true;
+    }
+
+    sortByUnitPrice();
+    observeProductGrid();
+    updateAllButtonTexts("Value (Unit Price)");
+
+    const sortContainer = label.closest(SORT_CONTAINER_SELECTOR);
+    if (sortContainer) {
+      const btn = sortContainer.querySelector<HTMLElement>(SORT_BUTTON_SELECTOR);
+      if (btn) {
+        btn.click();
+      }
+    }
+
+    observeButtonRerender();
+  }
 
   function createValueOption(templateLabel: Element): Element {
     const label = templateLabel.cloneNode(true) as HTMLElement;
@@ -231,39 +283,7 @@ import { normalizePrice, compareByUnitPrice, waitForElement } from "./shared";
     // Handle click - capture phase to fire before Waitrose's React handler
     label.addEventListener(
       "click",
-      (e) => {
-        e.stopImmediatePropagation();
-        e.preventDefault();
-
-        valueSortActive = true;
-
-        // Uncheck other radios in all sort containers
-        for (const container of findSortContainers()) {
-          for (const r of container.querySelectorAll('input[type="radio"]')) {
-            (r as HTMLInputElement).checked = false;
-          }
-        }
-
-        // Check our radio
-        if (radio) radio.checked = true;
-
-        // Sort products
-        sortByUnitPrice();
-        observeProductGrid();
-
-        // Update button text across all containers
-        updateAllButtonTexts("Value (Unit Price)");
-
-        // Close dropdown by clicking the button
-        const sortContainer = label.closest(SORT_CONTAINER_SELECTOR);
-        if (sortContainer) {
-          const btn = sortContainer.querySelector<HTMLElement>(SORT_BUTTON_SELECTOR);
-          if (btn) btn.click();
-        }
-
-        // Watch for React re-renders of button text
-        observeButtonRerender();
-      },
+      (event) => activateValueSortFromOption(label, radio, event),
       true,
     );
 
@@ -273,7 +293,9 @@ import { normalizePrice, compareByUnitPrice, waitForElement } from "./shared";
   function injectValueOption(container: Element): void {
     // Find the content div (second child, holds options when dropdown is open)
     const btn = container.querySelector(SORT_BUTTON_SELECTOR);
-    if (!btn) return;
+    if (!btn) {
+      return;
+    }
 
     // The content div is a sibling of the button (or a child of the container)
     const contentDivs = container.querySelectorAll(":scope > div");
@@ -284,7 +306,9 @@ import { normalizePrice, compareByUnitPrice, waitForElement } from "./shared";
         break;
       }
     }
-    if (!contentDiv) return;
+    if (!contentDiv) {
+      return;
+    }
 
     // Set up observer for when dropdown opens (content div gets children)
     const observer = new MutationObserver(() => {
@@ -303,43 +327,57 @@ import { normalizePrice, compareByUnitPrice, waitForElement } from "./shared";
     console.log(`${LOG_PREFIX} Set up dropdown injection observer`);
   }
 
+  function syncValueOptionSelection(optionsContainer: Element, valueOption: Element): void {
+    if (!valueSortActive) {
+      return;
+    }
+
+    const radio = valueOption.querySelector('input[type="radio"]') as HTMLInputElement | null;
+    if (radio) {
+      radio.checked = true;
+    }
+
+    for (const r of optionsContainer.querySelectorAll('input[type="radio"]')) {
+      if ((r as HTMLInputElement).name !== VALUE_OPTION_NAME) {
+        (r as HTMLInputElement).checked = false;
+      }
+    }
+  }
+
   function injectIntoOpenDropdown(_container: Element, contentDiv: Element): void {
     // Find the options container (div with label children)
     const labels = contentDiv.querySelectorAll('label[class*="label___"]');
-    if (labels.length === 0) return;
+    if (labels.length === 0) {
+      return;
+    }
 
     // Check if already injected
     const existing = contentDiv.querySelector(`input[name="${VALUE_OPTION_NAME}"]`);
-    if (existing) return;
+    if (existing) {
+      return;
+    }
 
     const optionsContainer = labels[0].parentElement;
-    if (!optionsContainer) return;
+    if (!optionsContainer) {
+      return;
+    }
 
     // Clone last label as template
-    const templateLabel = labels[labels.length - 1];
+    const templateLabel = [...labels].at(-1);
+    if (!templateLabel) {
+      return;
+    }
     const valueOption = createValueOption(templateLabel);
 
     // Add divider (empty <p> element like the others)
     const dividers = optionsContainer.querySelectorAll(':scope > p[class*="subtext___"]');
     if (dividers.length > 0) {
       const divider = dividers[0].cloneNode(true);
-      optionsContainer.appendChild(divider);
+      optionsContainer.append(divider);
     }
 
-    optionsContainer.appendChild(valueOption);
-
-    // If value sort was active, check our radio
-    if (valueSortActive) {
-      const radio = valueOption.querySelector('input[type="radio"]') as HTMLInputElement | null;
-      if (radio) radio.checked = true;
-
-      // Uncheck other radios
-      for (const r of optionsContainer.querySelectorAll('input[type="radio"]')) {
-        if ((r as HTMLInputElement).name !== VALUE_OPTION_NAME) {
-          (r as HTMLInputElement).checked = false;
-        }
-      }
-    }
+    optionsContainer.append(valueOption);
+    syncValueOptionSelection(optionsContainer, valueOption);
 
     console.log(`${LOG_PREFIX} Injected "Value (Unit Price)" option into dropdown`);
   }
@@ -350,10 +388,14 @@ import { normalizePrice, compareByUnitPrice, waitForElement } from "./shared";
     container.addEventListener("click", (e) => {
       const target = e.target as HTMLElement;
       const label = target.closest?.('label[class*="label___"]');
-      if (!label) return;
+      if (!label) {
+        return;
+      }
 
       const radio = label.querySelector('input[type="radio"]') as HTMLInputElement | null;
-      if (!radio || radio.name === VALUE_OPTION_NAME) return;
+      if (!radio || radio.name === VALUE_OPTION_NAME) {
+        return;
+      }
 
       // User clicked a native sort option
       valueSortActive = false;
@@ -397,7 +439,9 @@ import { normalizePrice, compareByUnitPrice, waitForElement } from "./shared";
       SORT_CONTAINER_SELECTOR,
       () => {
         const found = findSortContainers();
-        if (found.length === 0) return false;
+        if (found.length === 0) {
+          return false;
+        }
 
         console.log(`${LOG_PREFIX} Sort container(s) appeared`);
         for (const container of found) {
@@ -412,7 +456,7 @@ import { normalizePrice, compareByUnitPrice, waitForElement } from "./shared";
         observeButtonRerender();
         return true;
       },
-      10000,
+      10_000,
       { logPrefix: LOG_PREFIX },
     );
   }
@@ -424,7 +468,7 @@ import { normalizePrice, compareByUnitPrice, waitForElement } from "./shared";
     console.log(`${LOG_PREFIX} Initializing on ${loc.href}`);
 
     // Gate on product grid before looking for sort controls
-    stopProductGridWatch = waitForElement(PRODUCT_GRID_SELECTOR, () => attemptInjection(), 10000, {
+    stopProductGridWatch = waitForElement(PRODUCT_GRID_SELECTOR, () => attemptInjection(), 10_000, {
       logPrefix: LOG_PREFIX,
     });
 
@@ -439,7 +483,7 @@ import { normalizePrice, compareByUnitPrice, waitForElement } from "./shared";
         stopProductGridWatch = waitForElement(
           PRODUCT_GRID_SELECTOR,
           () => attemptInjection(),
-          10000,
+          10_000,
           { logPrefix: LOG_PREFIX },
         );
       }
