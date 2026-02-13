@@ -11,6 +11,20 @@ function delay(window, ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+// Flush microtask queue (needed because auto-sort is async behind getAutoSortSetting)
+const tick = () => new Promise((r) => setTimeout(r, 0));
+
+function setAutoSortSetting(window, enabled) {
+  window.chrome = {
+    storage: {
+      local: {
+        get: (_key, callback) => callback({ autoSort: enabled }),
+        set: () => {},
+      },
+    },
+  };
+}
+
 function setupDom(bodyHtml = "") {
   const dom = new JSDOM(`<!doctype html><html><body>${bodyHtml}</body></html>`, {
     url: "https://www.sainsburys.co.uk/gol-ui/groceries/fruit-and-vegetables/fresh-fruit/apples/c:1034099",
@@ -121,7 +135,7 @@ test("findSortDropdown falls back to option-value sniffing", (t) => {
   assert.ok(select, "should find dropdown via option value sniffing");
 });
 
-test("injectValueOption auto-selects Value sort and sorts products", (t) => {
+test("injectValueOption auto-selects Value sort and sorts products", async (t) => {
   const env = setupDom(
     makeSortDropdown() + makeProductList(["£5.00 / kg", "£2.00 / kg", "£3.00 / kg"]),
   );
@@ -132,6 +146,7 @@ test("injectValueOption auto-selects Value sort and sorts products", (t) => {
 
   const select = env.hooks.findSortDropdown();
   env.hooks.injectValueOption(select);
+  await tick();
 
   assert.equal(select.value, "value-sort");
 
@@ -144,7 +159,24 @@ test("injectValueOption auto-selects Value sort and sorts products", (t) => {
   assert.equal(prices[2], "£5.00 / kg");
 });
 
-test("injectValueOption sorts Sainsbury's pence format correctly", (t) => {
+test("injectValueOption does not auto-select Value sort when auto-sort setting is off", async (t) => {
+  const env = setupDom(makeSortDropdown() + makeProductList(["£5.00 / kg", "£2.00 / kg"]));
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
+
+  setAutoSortSetting(env.window, false);
+
+  const select = env.hooks.findSortDropdown();
+  env.hooks.injectValueOption(select);
+  await tick();
+
+  assert.equal(select.value, "-relevance");
+  assert.ok(select.querySelector('option[value="value-sort"]'));
+});
+
+test("injectValueOption sorts Sainsbury's pence format correctly", async (t) => {
   const env = setupDom(makeSortDropdown() + makeProductList(["63p / ea", "17p / ea", "30p / ea"]));
   t.after(() => {
     env.hooks.resetObservers();
@@ -153,6 +185,7 @@ test("injectValueOption sorts Sainsbury's pence format correctly", (t) => {
 
   const select = env.hooks.findSortDropdown();
   env.hooks.injectValueOption(select);
+  await tick();
 
   const items = env.document.querySelectorAll("ul.ln-o-grid > li");
   const prices = Array.from(items).map(
@@ -163,7 +196,7 @@ test("injectValueOption sorts Sainsbury's pence format correctly", (t) => {
   assert.equal(prices[2], "63p / ea");
 });
 
-test("injectValueOption handles mixed unit types", (t) => {
+test("injectValueOption handles mixed unit types", async (t) => {
   const env = setupDom(
     makeSortDropdown() + makeProductList(["30p / ea", "£2.50 / kg", "£1.00 / kg"]),
   );
@@ -174,6 +207,7 @@ test("injectValueOption handles mixed unit types", (t) => {
 
   const select = env.hooks.findSortDropdown();
   env.hooks.injectValueOption(select);
+  await tick();
 
   const items = env.document.querySelectorAll("ul.ln-o-grid > li");
   const prices = Array.from(items).map(
@@ -185,7 +219,7 @@ test("injectValueOption handles mixed unit types", (t) => {
   assert.equal(prices[2], "30p / ea");
 });
 
-test("injectValueOption skips when option already exists", (t) => {
+test("injectValueOption skips when option already exists", async (t) => {
   const env = setupDom(makeSortDropdown() + makeProductList(["£5.00 / kg", "£2.00 / kg"]));
   t.after(() => {
     env.hooks.resetObservers();
@@ -194,6 +228,7 @@ test("injectValueOption skips when option already exists", (t) => {
 
   const select = env.hooks.findSortDropdown();
   env.hooks.injectValueOption(select);
+  await tick();
   assert.equal(select.value, "value-sort");
 
   // Manually switch to another value
@@ -201,6 +236,7 @@ test("injectValueOption skips when option already exists", (t) => {
 
   // Call again — should early-return, NOT re-select
   env.hooks.injectValueOption(select);
+  await tick();
   assert.equal(select.value, "-relevance");
 });
 
@@ -296,6 +332,7 @@ test("observeSelectRerender re-selects after React resets value", async (t) => {
 
   const select = env.hooks.findSortDropdown();
   env.hooks.injectValueOption(select);
+  await tick();
   env.hooks.observeSelectRerender(select);
 
   assert.equal(select.value, "value-sort");
@@ -309,6 +346,60 @@ test("observeSelectRerender re-selects after React resets value", async (t) => {
   assert.equal(select.value, "value-sort");
 });
 
+test("observeSelectRerender re-sorts after option re-injection when auto-sort setting is off", async (t) => {
+  const env = setupDom(
+    makeSortDropdown() +
+      '<ul class="ln-o-grid ln-o-grid--matrix ln-o-grid--equal-height">' +
+      '<li id="expensive" class="pt-grid-item"><div data-testid="pt-retail-price-and-unit"><span data-testid="pt-unit-price">£5.00 / kg</span></div></li>' +
+      '<li id="cheap" class="pt-grid-item"><div data-testid="pt-retail-price-and-unit"><span data-testid="pt-unit-price">£2.00 / kg</span></div></li>' +
+      "</ul>",
+  );
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
+
+  setAutoSortSetting(env.window, false);
+
+  const select = env.hooks.findSortDropdown();
+  env.hooks.injectValueOption(select);
+  await tick();
+  env.hooks.observeSelectRerender(select);
+
+  // Manually activate value sort while auto-sort default is disabled.
+  select.value = env.hooks.VALUE_OPTION_ID;
+  select.dispatchEvent(new env.window.Event("change", { bubbles: true }));
+
+  let items = env.document.querySelectorAll("ul.ln-o-grid > li");
+  let prices = Array.from(items).map(
+    (li) => li.querySelector('[data-testid="pt-unit-price"]').textContent,
+  );
+  assert.equal(prices[0], "£2.00 / kg");
+  assert.equal(prices[1], "£5.00 / kg");
+
+  // Simulate React replacing sort option and products becoming unsorted.
+  const list = env.document.querySelector("ul.ln-o-grid.ln-o-grid--matrix");
+  const expensive = env.document.querySelector("#expensive");
+  const cheap = env.document.querySelector("#cheap");
+  list.append(expensive, cheap);
+
+  const opt = select.querySelector(`option[value="${env.hooks.VALUE_OPTION_ID}"]`);
+  if (opt) {
+    opt.remove();
+  }
+  select.value = "-relevance";
+
+  await delay(env.window, 30);
+
+  assert.equal(select.value, env.hooks.VALUE_OPTION_ID);
+  items = env.document.querySelectorAll("ul.ln-o-grid > li");
+  prices = Array.from(items).map(
+    (li) => li.querySelector('[data-testid="pt-unit-price"]').textContent,
+  );
+  assert.equal(prices[0], "£2.00 / kg");
+  assert.equal(prices[1], "£5.00 / kg");
+});
+
 test("observeSelectRerender does not force value sort after user switches away", async (t) => {
   const env = setupDom(makeSortDropdown() + makeProductList(["£5.00 / kg", "£2.00 / kg"]));
   t.after(() => {
@@ -318,6 +409,7 @@ test("observeSelectRerender does not force value sort after user switches away",
 
   const select = env.hooks.findSortDropdown();
   env.hooks.injectValueOption(select);
+  await tick();
   env.hooks.observeSelectRerender(select);
 
   select.value = "-relevance";
@@ -346,6 +438,7 @@ test("observeProductList sorts once per product load without self-trigger loop",
 
   const select = env.hooks.findSortDropdown();
   env.hooks.injectValueOption(select);
+  await tick();
 
   const li = env.document.createElement("li");
   li.className = "pt-grid-item";
@@ -375,6 +468,7 @@ test("switching away clears pending product sort timeout", async (t) => {
 
   const select = env.hooks.findSortDropdown();
   env.hooks.injectValueOption(select);
+  await tick();
 
   const li = env.document.createElement("li");
   li.className = "pt-grid-item";
@@ -515,7 +609,7 @@ test("init gates injection on product list appearing", async (t) => {
   );
 });
 
-test("products without unit price are sorted to the bottom", (t) => {
+test("products without unit price are sorted to the bottom", async (t) => {
   const productListHtml =
     '<ul class="ln-o-grid ln-o-grid--matrix ln-o-grid--equal-height">' +
     '<li class="pt-grid-item"><div>No price info</div></li>' +
@@ -530,6 +624,7 @@ test("products without unit price are sorted to the bottom", (t) => {
 
   const select = env.hooks.findSortDropdown();
   env.hooks.injectValueOption(select);
+  await tick();
 
   const items = env.document.querySelectorAll("ul.ln-o-grid > li");
   const texts = Array.from(items).map((li) => {
@@ -541,7 +636,7 @@ test("products without unit price are sorted to the bottom", (t) => {
   assert.equal(texts[2], "no-price");
 });
 
-test("products with unsupported units are sorted to the bottom", (t) => {
+test("products with unsupported units are sorted to the bottom", async (t) => {
   const env = setupDom(makeSortDropdown() + makeProductList(["£0.10 / slice", "£1.00 / kg"]));
   t.after(() => {
     env.hooks.resetObservers();
@@ -550,6 +645,7 @@ test("products with unsupported units are sorted to the bottom", (t) => {
 
   const select = env.hooks.findSortDropdown();
   env.hooks.injectValueOption(select);
+  await tick();
 
   const items = env.document.querySelectorAll("ul.ln-o-grid > li");
   const prices = Array.from(items).map(

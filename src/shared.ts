@@ -304,6 +304,21 @@ export function compareByUnitPrice(
   return aComparable.price - bComparable.price;
 }
 
+// --- Storage ---
+
+export const STORAGE_KEY_AUTO_SORT = "autoSort" as const;
+
+export function getAutoSortSetting(): Promise<boolean> {
+  if (typeof chrome === "undefined" || !chrome.storage) {
+    return Promise.resolve(true);
+  }
+  return new Promise((resolve) => {
+    chrome.storage.local.get(STORAGE_KEY_AUTO_SORT, (result) => {
+      resolve((result[STORAGE_KEY_AUTO_SORT] as boolean | undefined) ?? true);
+    });
+  });
+}
+
 // --- DOM utilities ---
 
 function runSelectorCallback(selector: string, callback: (el: Element) => boolean | void): boolean {

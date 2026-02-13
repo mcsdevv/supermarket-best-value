@@ -4,6 +4,7 @@ import {
   normalizePrice,
   parseUnitPrice,
   waitForElement,
+  getAutoSortSetting,
 } from "./shared";
 import type { SortableProduct } from "./types";
 
@@ -249,12 +250,18 @@ import type { SortableProduct } from "./types";
       boundSelects.add(select);
     }
 
-    if (autoActivate && !hasValueOption) {
-      valueSortActive = true;
-      select.value = VALUE_OPTION_ID;
-      updateDropdownLabel(select, VALUE_OPTION_TEXT);
-      sortByUnitPrice();
-      observeProductList();
+    if (autoActivate && !hasValueOption && !valueSortActive) {
+      void (async () => {
+        const autoSort = await getAutoSortSetting();
+        if (!autoSort || valueSortActive) {
+          return;
+        }
+        valueSortActive = true;
+        select.value = VALUE_OPTION_ID;
+        updateDropdownLabel(select, VALUE_OPTION_TEXT);
+        sortByUnitPrice();
+        observeProductList();
+      })();
     }
   }
 

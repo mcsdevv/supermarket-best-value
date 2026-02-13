@@ -32,12 +32,18 @@ const configs = [
     entryPoints: ["src/waitrose-content.ts"],
     outfile: "dist/waitrose-content.js",
   },
+  {
+    ...sharedOptions,
+    entryPoints: ["src/popup.ts"],
+    outfile: "dist/popup.js",
+  },
 ];
 
 function copyAssets() {
   mkdirSync("dist/icons", { recursive: true });
   cpSync("manifest.json", "dist/manifest.json");
   cpSync("icons", "dist/icons", { recursive: true });
+  cpSync("src/popup.html", "dist/popup.html");
 }
 
 if (isWatch) {

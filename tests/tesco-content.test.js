@@ -11,6 +11,20 @@ function delay(window, ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+// Flush microtask queue (needed because auto-sort is async behind getAutoSortSetting)
+const tick = () => new Promise((r) => setTimeout(r, 0));
+
+function setAutoSortSetting(window, enabled) {
+  window.chrome = {
+    storage: {
+      local: {
+        get: (_key, callback) => callback({ autoSort: enabled }),
+        set: () => {},
+      },
+    },
+  };
+}
+
 function setupDom(bodyHtml = "") {
   const dom = new JSDOM(`<!doctype html><html><body>${bodyHtml}</body></html>`, {
     pretendToBeVisual: true,
@@ -250,6 +264,7 @@ test("injectValueOption auto-selects Value sort and sorts products", async (t) =
 
   const select = env.document.querySelector("#sort");
   env.hooks.injectValueOption(select);
+  await tick();
 
   assert.equal(select.value, "value-sort");
 
@@ -258,6 +273,29 @@ test("injectValueOption auto-selects Value sort and sorts products", async (t) =
   assert.equal(prices[0], "£2.00/kg");
   assert.equal(prices[1], "£3.00/kg");
   assert.equal(prices[2], "£5.00/kg");
+});
+
+test("injectValueOption does not auto-select Value sort when auto-sort setting is off", async (t) => {
+  const env = setupDom(
+    '<select id="sort"><option value="relevance">Relevance</option></select>' +
+      '<ul data-auto="product-list">' +
+      '<li><span class="price__subtext">£5.00/kg</span></li>' +
+      '<li><span class="price__subtext">£2.00/kg</span></li>' +
+      "</ul>",
+  );
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
+
+  setAutoSortSetting(env.window, false);
+
+  const select = env.document.querySelector("#sort");
+  env.hooks.injectValueOption(select);
+  await tick();
+
+  assert.equal(select.value, "relevance");
+  assert.ok(select.querySelector('option[value="value-sort"]'));
 });
 
 test("injectValueOption skips when option already exists", async (t) => {
@@ -275,6 +313,7 @@ test("injectValueOption skips when option already exists", async (t) => {
 
   const select = env.document.querySelector("#sort");
   env.hooks.injectValueOption(select);
+  await tick();
   assert.equal(select.value, "value-sort");
 
   // Manually switch to another value
@@ -282,6 +321,7 @@ test("injectValueOption skips when option already exists", async (t) => {
 
   // Call again — should early-return, NOT re-select
   env.hooks.injectValueOption(select);
+  await tick();
   assert.equal(select.value, "relevance");
 });
 
@@ -301,6 +341,7 @@ test("observeSelectRerender re-selects after React resets value", async (t) => {
 
   const select = env.document.querySelector("select");
   env.hooks.injectValueOption(select);
+  await tick();
   env.hooks.observeSelectRerender(select);
 
   assert.equal(select.value, "value-sort");
@@ -312,6 +353,57 @@ test("observeSelectRerender re-selects after React resets value", async (t) => {
   await delay(env.window, 30);
 
   assert.equal(select.value, "value-sort");
+});
+
+test("observeSelectRerender re-sorts after option re-injection when auto-sort setting is off", async (t) => {
+  const env = setupDom(
+    '<div id="sort-wrap"><label>Sort by</label>' +
+      '<select><option value="relevance">Relevance</option></select></div>' +
+      '<ul data-auto="product-list">' +
+      '<li id="expensive"><span class="price__subtext">£5.00/kg</span></li>' +
+      '<li id="cheap"><span class="price__subtext">£2.00/kg</span></li>' +
+      "</ul>",
+  );
+  t.after(() => {
+    env.hooks.resetObservers();
+    env.dom.window.close();
+  });
+
+  setAutoSortSetting(env.window, false);
+
+  const select = env.document.querySelector("select");
+  env.hooks.injectValueOption(select);
+  await tick();
+  env.hooks.observeSelectRerender(select);
+
+  // Manually activate value sort while auto-sort default is disabled.
+  select.value = env.hooks.VALUE_OPTION_ID;
+  select.dispatchEvent(new env.window.Event("change", { bubbles: true }));
+
+  let items = env.document.querySelectorAll('[data-auto="product-list"] > li');
+  let prices = [...items].map((li) => li.textContent);
+  assert.equal(prices[0], "£2.00/kg");
+  assert.equal(prices[1], "£5.00/kg");
+
+  // Simulate React replacing sort option and products becoming unsorted.
+  const productList = env.document.querySelector('[data-auto="product-list"]');
+  const expensive = env.document.querySelector("#expensive");
+  const cheap = env.document.querySelector("#cheap");
+  productList.append(expensive, cheap);
+
+  const opt = select.querySelector(`option[value="${env.hooks.VALUE_OPTION_ID}"]`);
+  if (opt) {
+    opt.remove();
+  }
+  select.value = "relevance";
+
+  await delay(env.window, 30);
+
+  assert.equal(select.value, env.hooks.VALUE_OPTION_ID);
+  items = env.document.querySelectorAll('[data-auto="product-list"] > li');
+  prices = [...items].map((li) => li.textContent);
+  assert.equal(prices[0], "£2.00/kg");
+  assert.equal(prices[1], "£5.00/kg");
 });
 
 test("observeSelectRerender does not force value sort after user switches away", async (t) => {
@@ -330,6 +422,7 @@ test("observeSelectRerender does not force value sort after user switches away",
 
   const select = env.document.querySelector("select");
   env.hooks.injectValueOption(select);
+  await tick();
   env.hooks.observeSelectRerender(select);
 
   select.value = "relevance";
@@ -364,6 +457,7 @@ test("observeProductList sorts once per product load without self-trigger loop",
 
   const select = env.document.querySelector("#sort");
   env.hooks.injectValueOption(select);
+  await tick();
 
   const li = env.document.createElement("li");
   li.innerHTML = '<span class="price__subtext">£1.00/kg</span>';
@@ -396,6 +490,7 @@ test("switching away clears pending product sort timeout", async (t) => {
 
   const select = env.document.querySelector("#sort");
   env.hooks.injectValueOption(select);
+  await tick();
 
   const li = env.document.createElement("li");
   li.innerHTML = '<span class="price__subtext">£1.00/kg</span>';
@@ -514,6 +609,7 @@ test("injectValueOption updates the visible dropdown label span", async (t) => {
 
   const select = env.document.querySelector("#sortBy");
   env.hooks.injectValueOption(select);
+  await tick();
 
   const label = env.document.querySelector(".ddsweb-dropdown__select-span");
   assert.equal(label.textContent, "Value (Unit Price)");
@@ -655,6 +751,7 @@ test("sortByUnitPrice ranks Clubcard-discounted items by their lower unit price"
 
   const select = env.document.querySelector("#sort");
   env.hooks.injectValueOption(select);
+  await tick();
 
   const items = env.document.querySelectorAll('[data-auto="product-list"] > li');
   const prices = [...items].map((li) => li.querySelector('[class*="price__subtext"]').textContent);
