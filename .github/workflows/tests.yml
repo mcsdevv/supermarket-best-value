@@ -20,5 +20,8 @@ jobs:
       - name: Typecheck, lint, and format
         run: bun run check
 
+      - name: Build (production)
+        run: bun run build:prod
+
       - name: Test
         run: bun run test
