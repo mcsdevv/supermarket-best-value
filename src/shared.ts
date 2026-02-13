@@ -335,7 +335,7 @@ export function waitForElement(
   maxWait = 10_000,
   {
     warnOnTimeout = true,
-    logPrefix = "[Value Sort]",
+    logPrefix = "[Unit Value]",
   }: { warnOnTimeout?: boolean; logPrefix?: string } = {},
 ): () => void {
   let done = false;

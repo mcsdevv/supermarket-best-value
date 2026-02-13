@@ -1,4 +1,4 @@
-Supermarket Value Sort adds a "Value (Unit Price)" sort option to UK supermarket websites so you can instantly find the cheapest products per unit — per kg, per litre, per item, and more.
+Supermarket Unit Value adds a "Value (Unit Price)" sort option to UK supermarket websites so you can instantly find the cheapest products per unit — per kg, per litre, per item, and more.
 
 HOW IT WORKS
 
@@ -37,4 +37,4 @@ The extension only requests the "storage" permission — used solely for remembe
 
 OPEN SOURCE
 
-Supermarket Value Sort is open source under the MIT license. View the source code, report issues, or contribute at: https://github.com/mcsdevv/supermarket-best-value
+Supermarket Unit Value is open source under the MIT license. View the source code, report issues, or contribute at: https://github.com/mcsdevv/supermarket-unit-value

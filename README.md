@@ -1,7 +1,7 @@
-# Supermarket Value Sort
+# Supermarket Unit Value
 
-[![Tests](https://github.com/mcsdevv/supermarket-best-value/actions/workflows/tests.yml/badge.svg)](https://github.com/mcsdevv/supermarket-best-value/actions/workflows/tests.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/mcsdevv/supermarket-best-value/blob/main/LICENSE)
+[![Tests](https://github.com/mcsdevv/supermarket-unit-value/actions/workflows/tests.yml/badge.svg)](https://github.com/mcsdevv/supermarket-unit-value/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/mcsdevv/supermarket-unit-value/blob/main/LICENSE)
 
 A Chrome extension that adds a "Value (Unit Price)" sort option to UK supermarket websites. It sorts products from cheapest to most expensive per unit (per kg, per litre, per item, etc.) so you can find the best deal at a glance.
 
@@ -36,7 +36,7 @@ Products without a unit price are moved to the bottom of the list.
 ## Install
 
 <!-- TODO: Uncomment once published -->
-<!-- [Install from the Chrome Web Store](https://chrome.google.com/webstore/detail/supermarket-value-sort/EXTENSION_ID) -->
+<!-- [Install from the Chrome Web Store](https://chrome.google.com/webstore/detail/supermarket-unit-value/EXTENSION_ID) -->
 
 ### From source
 
@@ -59,7 +59,7 @@ The built extension files will be in `dist/`.
 
 ## Problems and Feature Requests
 
-If something isn't working or you have an idea for an improvement, please [open an issue](https://github.com/mcsdevv/supermarket-best-value/issues/new/choose). Bug reports and feature requests both have templates to help you provide the right details.
+If something isn't working or you have an idea for an improvement, please [open an issue](https://github.com/mcsdevv/supermarket-unit-value/issues/new/choose). Bug reports and feature requests both have templates to help you provide the right details.
 
 ## Privacy
 

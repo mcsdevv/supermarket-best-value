@@ -1,10 +1,10 @@
-# Privacy Policy — Supermarket Value Sort
+# Privacy Policy — Supermarket Unit Value
 
 **Last updated:** February 2026
 
 ## Data Collection
 
-Supermarket Value Sort does **not** collect, transmit, or store any personal data. The extension:
+Supermarket Unit Value does **not** collect, transmit, or store any personal data. The extension:
 
 - Makes **zero network requests** — no analytics, no tracking, no telemetry
 - Does **not** access browsing history, cookies, or any data outside its matched supermarket pages
@@ -38,4 +38,4 @@ If this policy changes, the update will be published here alongside a new versio
 
 ## Contact
 
-For questions about this privacy policy, open an issue on the [GitHub repository](https://github.com/mcsdevv/supermarket-value-sort).
+For questions about this privacy policy, open an issue on the [GitHub repository](https://github.com/mcsdevv/supermarket-unit-value).
