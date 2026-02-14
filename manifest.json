@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Supermarket Unit Value",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Adds a 'Value' sort option to UK supermarket sites, sorting products by unit price. Supports Tesco, Sainsbury's & Waitrose.",
   "homepage_url": "https://github.com/mcsdevv/supermarket-unit-value",
   "permissions": ["storage"],
@@ -20,7 +20,10 @@
       "run_at": "document_idle"
     },
     {
-      "matches": ["https://www.sainsburys.co.uk/gol-ui/groceries/*"],
+      "matches": [
+        "https://www.sainsburys.co.uk/gol-ui/groceries/*",
+        "https://www.sainsburys.co.uk/gol-ui/SearchResults/*"
+      ],
       "js": ["sainsburys-content.js"],
       "run_at": "document_idle"
     },
