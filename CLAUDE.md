@@ -36,4 +36,14 @@ Breaking changes: add `!` after type (e.g. `feat!: redesign popup UI`) or includ
 
 ## Releases
 
-Releases are automated via semantic-release. On push to `main`, the CI workflow analyzes commits since the last release, bumps the version in `manifest.json`, generates a changelog, and creates a GitHub release with the packaged zip. Do not manually edit the version in `manifest.json` or `CHANGELOG.md`.
+Releases are automated via semantic-release. On push to `main`, the CI workflow analyzes commits since the last release, bumps the version in `manifest.json`, generates a changelog, and creates a GitHub release with the packaged zip. Do not manually edit `CHANGELOG.md`.
+
+## Version Bumps
+
+Every PR must bump the `version` field in `manifest.json`. Use semantic versioning:
+
+- **Patch** (e.g. 1.4.0 → 1.4.1): bug fixes, performance improvements
+- **Minor** (e.g. 1.4.0 → 1.5.0): new features
+- **Major** (e.g. 1.4.0 → 2.0.0): breaking changes
+
+This ensures the Chrome Web Store accepts each new upload, which requires a strictly increasing version.
