@@ -1,9 +1,8 @@
 ## [1.0.1](https://github.com/mcsdevv/supermarket-unit-value/compare/v1.0.0...v1.0.1) (2026-02-13)
 
-
 ### Bug Fixes
 
-* resolve 108 oxlint warnings in test files ([#41](https://github.com/mcsdevv/supermarket-unit-value/issues/41)) ([a6b6e6a](https://github.com/mcsdevv/supermarket-unit-value/commit/a6b6e6aac31936f8680e2ec3b30b26c05675d717))
+- resolve 108 oxlint warnings in test files ([#41](https://github.com/mcsdevv/supermarket-unit-value/issues/41)) ([a6b6e6a](https://github.com/mcsdevv/supermarket-unit-value/commit/a6b6e6aac31936f8680e2ec3b30b26c05675d717))
 
 # 1.0.0 (2026-02-13)
 
