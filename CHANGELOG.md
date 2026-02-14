@@ -1,9 +1,8 @@
 ## [1.0.2](https://github.com/mcsdevv/supermarket-unit-value/compare/v1.0.1...v1.0.2) (2026-02-14)
 
-
 ### Bug Fixes
 
-* add SearchResults URL pattern to Sainsbury's content script ([#44](https://github.com/mcsdevv/supermarket-unit-value/issues/44)) ([1294153](https://github.com/mcsdevv/supermarket-unit-value/commit/12941533a103b0a672107f18f045da3a05513c7b))
+- add SearchResults URL pattern to Sainsbury's content script ([#44](https://github.com/mcsdevv/supermarket-unit-value/issues/44)) ([1294153](https://github.com/mcsdevv/supermarket-unit-value/commit/12941533a103b0a672107f18f045da3a05513c7b))
 
 ## [1.4.0](https://github.com/mcsdevv/supermarket-unit-value) (2026-02-13)
 

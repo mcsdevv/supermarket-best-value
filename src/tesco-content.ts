@@ -428,17 +428,47 @@ import type { SortableProduct } from "./types";
 
   // --- Init ---
 
+  function isGroceriesPage(): boolean {
+    return document.location.pathname.startsWith("/groceries");
+  }
+
+  function resetState(): void {
+    deactivateValueSort();
+    if (selectObserver) {
+      selectObserver.disconnect();
+      selectObserver = null;
+    }
+    if (labelObserver) {
+      labelObserver.disconnect();
+      labelObserver = null;
+    }
+    if (stopSortWatchers) {
+      stopSortWatchers();
+      stopSortWatchers = null;
+    }
+    if (stopProductListWatch) {
+      stopProductListWatch();
+      stopProductListWatch = null;
+    }
+  }
+
+  function startProductListWatch(productListSelector: string): void {
+    stopProductListWatch = waitForElement(productListSelector, () => attemptInjection(), 10_000, {
+      logPrefix: LOG_PREFIX,
+    });
+  }
+
   function init(): void {
     const loc = document.location;
     console.log(`${LOG_PREFIX} Initializing on ${loc.href}`);
 
-    // Gate on product list to ensure page is sufficiently rendered before
-    // Looking for the sort dropdown. waitForElement checks immediately first,
-    // So pages where the product list is already in the DOM work without delay.
     const productListSelector = PRODUCT_LIST_SELECTORS.join(", ");
-    stopProductListWatch = waitForElement(productListSelector, () => attemptInjection(), 10_000, {
-      logPrefix: LOG_PREFIX,
-    });
+
+    // Skip product-list watching on non-groceries pages; the SPA observer
+    // Still starts below and will begin watching when the user navigates in.
+    if (isGroceriesPage()) {
+      startProductListWatch(productListSelector);
+    }
 
     let lastUrl = loc.href;
 
@@ -446,31 +476,10 @@ import type { SortableProduct } from "./types";
       if (loc.href !== lastUrl) {
         lastUrl = loc.href;
         console.log(`${LOG_PREFIX} SPA navigation to ${loc.href}`);
-        deactivateValueSort();
-        if (selectObserver) {
-          selectObserver.disconnect();
-          selectObserver = null;
+        resetState();
+        if (isGroceriesPage()) {
+          startProductListWatch(productListSelector);
         }
-        if (labelObserver) {
-          labelObserver.disconnect();
-          labelObserver = null;
-        }
-        if (stopSortWatchers) {
-          stopSortWatchers();
-          stopSortWatchers = null;
-        }
-        if (stopProductListWatch) {
-          stopProductListWatch();
-          stopProductListWatch = null;
-        }
-        stopProductListWatch = waitForElement(
-          productListSelector,
-          () => attemptInjection(),
-          10_000,
-          {
-            logPrefix: LOG_PREFIX,
-          },
-        );
       }
     }).observe(document.body, { childList: true, subtree: true });
   }
@@ -487,25 +496,7 @@ import type { SortableProduct } from "./types";
       observeLabelRerender,
       observeSelectRerender,
       updateDropdownLabel,
-      resetObservers: () => {
-        deactivateValueSort();
-        if (selectObserver) {
-          selectObserver.disconnect();
-          selectObserver = null;
-        }
-        if (labelObserver) {
-          labelObserver.disconnect();
-          labelObserver = null;
-        }
-        if (stopSortWatchers) {
-          stopSortWatchers();
-          stopSortWatchers = null;
-        }
-        if (stopProductListWatch) {
-          stopProductListWatch();
-          stopProductListWatch = null;
-        }
-      },
+      resetObservers: resetState,
       extractUnitPrice,
       sortByUnitPrice,
       get valueSortActive() {
