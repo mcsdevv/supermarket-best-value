@@ -250,7 +250,7 @@ import type { SortableProduct } from "./types";
       boundSelects.add(select);
     }
 
-    if (autoActivate && !hasValueOption && !valueSortActive) {
+    if (autoActivate && !valueSortActive) {
       void (async () => {
         const autoSort = await getAutoSortSetting();
         if (!autoSort || valueSortActive) {
