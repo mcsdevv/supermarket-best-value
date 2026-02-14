@@ -1,3 +1,10 @@
+## [1.4.2](https://github.com/mcsdevv/supermarket-unit-value/compare/v1.4.1...v1.4.2) (2026-02-14)
+
+
+### Bug Fixes
+
+* support Tesco value sort option after SPA navigation from homepage ([#45](https://github.com/mcsdevv/supermarket-unit-value/issues/45)) ([bbdbac8](https://github.com/mcsdevv/supermarket-unit-value/commit/bbdbac8673d1f60faa50d46f5944c5e552cd4a15))
+
 ## [1.0.2](https://github.com/mcsdevv/supermarket-unit-value/compare/v1.0.1...v1.0.2) (2026-02-14)
 
 ### Bug Fixes
